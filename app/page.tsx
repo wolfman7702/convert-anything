@@ -12,7 +12,7 @@ export default function Home() {
     <div className="max-w-7xl mx-auto space-y-16">
       <div className="text-center space-y-6">
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900">
-          Convert <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Anything</span> to Anything
+          <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ConvertingHub</span> - Convert Anything
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
           185+ free file conversion tools. Images, PDFs, videos, documents, and more.

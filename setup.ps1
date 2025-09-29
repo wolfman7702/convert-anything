@@ -1,4 +1,4 @@
-Write-Host "ConvertAnything Setup Script" -ForegroundColor Green
+Write-Host "ConvertingHub Setup Script" -ForegroundColor Green
 Write-Host "===========================" -ForegroundColor Green
 Write-Host ""
 

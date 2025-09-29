@@ -1,5 +1,5 @@
 @echo off
-echo ConvertAnything Setup Script
+echo ConvertingHub Setup Script
 echo ===========================
 echo.
 

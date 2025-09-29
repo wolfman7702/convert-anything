@@ -1,4 +1,4 @@
-# ConvertAnything - Free Online File Converter
+# ConvertingHub - Free Online File Converter
 
 A comprehensive client-side file conversion website with 185+ different file conversions that work entirely in the browser without any server processing.
 
@@ -52,7 +52,7 @@ Before running this project, make sure you have:
 ## Project Structure
 
 ```
-D:/ConvertAnything/
+D:/ConvertingHub/
 ├── app/                    # Next.js app router pages
 │   ├── [conversion]/      # Dynamic conversion pages
 │   ├── category/          # Category pages
@@ -213,7 +213,7 @@ If you need help:
 
 ---
 
-**ConvertAnything** - Convert anything to anything, completely free and private! 🚀
+**ConvertingHub** - Convert anything to anything, completely free and private! 🚀
 
 ## Quick Setup Commands
 
