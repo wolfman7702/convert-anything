@@ -14,6 +14,10 @@ import { docxToHTML, docxToText, docxToPDF, htmlToText, markdownToHTML, markdown
 import { csvToJSON, jsonToCSV, xlsxToCSV, csvToXLSX, xlsxToJSON, jsonToXLSX, base64Encode, base64Decode, urlEncode, urlDecode, csvToXML, jsonToXML, xmlToJSON, yamlToJSON, jsonToYAML } from '@/lib/converters/dataConverter';
 import { createZip, extractZip, gzipCompress, gzipDecompress } from '@/lib/converters/archiveConverter';
 import { generateQRCode, generateBarcode, svgToPNG, svgToJPG, svgToPDF, extractColorsFromImage, imageToASCII } from '@/lib/converters/utilityConverter';
+import { countWords, convertCase, removeDuplicateLines, sortLines, reverseText, findReplace, formatJSON, minifyJSON } from '@/lib/converters/textConverter';
+import { rotateImage as rotateImageNew, flipImage as flipImageNew, grayscaleImage, invertImage, adjustBrightness, extractColorPalette } from '@/lib/converters/imageManipulation';
+import { hexToRgb, rgbToHex, hexToHsl, generateRandomColor } from '@/lib/converters/colorConverter';
+import { jsonToXML, yamlToJSON, jsonToYAML, tsvToCSV, csvToTSV, xmlToJSON, htmlTableToCSV } from '@/lib/converters/dataFormatConverter';
 
 interface ConversionPageProps {
   conversion: ConversionType;
@@ -421,6 +425,147 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           outputBlob = new Blob([ascii], { type: 'text/plain' });
           break;
 
+        // Text utilities
+        case 'word-counter':
+          const textForCount = await files[0].text();
+          const stats = countWords(textForCount);
+          const statsText = `Words: ${stats.words}\nCharacters: ${stats.characters}\nCharacters (no spaces): ${stats.charactersNoSpaces}\nSentences: ${stats.sentences}\nParagraphs: ${stats.paragraphs}\nLines: ${stats.lines}\nReading Time: ${stats.readingTime} min`;
+          outputBlob = new Blob([statsText], { type: 'text/plain' });
+          break;
+
+        case 'case-converter-upper':
+        case 'case-converter-lower':
+        case 'case-converter-title':
+          const textForCase = await files[0].text();
+          const caseType = conversion.id.includes('upper') ? 'upper' : conversion.id.includes('lower') ? 'lower' : 'title';
+          const convertedText = convertCase(textForCase, caseType);
+          outputBlob = new Blob([convertedText], { type: 'text/plain' });
+          break;
+
+        case 'remove-duplicates':
+          const textForDupes = await files[0].text();
+          const noDupes = removeDuplicateLines(textForDupes);
+          outputBlob = new Blob([noDupes], { type: 'text/plain' });
+          break;
+
+        case 'sort-lines':
+          const textForSort = await files[0].text();
+          const sorted = sortLines(textForSort);
+          outputBlob = new Blob([sorted], { type: 'text/plain' });
+          break;
+
+        case 'reverse-text':
+          const textForReverse = await files[0].text();
+          const reversed = reverseText(textForReverse);
+          outputBlob = new Blob([reversed], { type: 'text/plain' });
+          break;
+
+        case 'find-replace':
+          const textForReplace = await files[0].text();
+          const replaced = findReplace(textForReplace, options.findText || '', options.replaceText || '');
+          outputBlob = new Blob([replaced], { type: 'text/plain' });
+          break;
+
+        case 'json-formatter':
+          const jsonText = await files[0].text();
+          const { formatted, isValid, error } = formatJSON(jsonText);
+          if (!isValid) {
+            alert(`Invalid JSON: ${error}`);
+            return;
+          }
+          outputBlob = new Blob([formatted], { type: 'application/json' });
+          break;
+
+        case 'json-minify':
+          const jsonForMinify = await files[0].text();
+          const minified = minifyJSON(jsonForMinify);
+          outputBlob = new Blob([minified], { type: 'application/json' });
+          break;
+
+        // Image manipulations
+        case 'image-rotate-90':
+          outputBlob = await rotateImageNew(files[0], 90);
+          break;
+        case 'image-rotate-180':
+          outputBlob = await rotateImageNew(files[0], 180);
+          break;
+        case 'image-rotate-270':
+          outputBlob = await rotateImageNew(files[0], 270);
+          break;
+
+        case 'image-flip-horizontal':
+          outputBlob = await flipImageNew(files[0], 'horizontal');
+          break;
+        case 'image-flip-vertical':
+          outputBlob = await flipImageNew(files[0], 'vertical');
+          break;
+
+        case 'image-grayscale':
+          outputBlob = await grayscaleImage(files[0]);
+          break;
+
+        case 'image-invert':
+          outputBlob = await invertImage(files[0]);
+          break;
+
+        case 'image-brightness':
+          const brightness = options.brightness || 100;
+          outputBlob = await adjustBrightness(files[0], brightness);
+          break;
+
+        // Color utilities
+        case 'hex-to-rgb':
+          const hexText = await files[0].text();
+          const rgb = hexToRgb(hexText.trim());
+          outputBlob = new Blob([`rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`], { type: 'text/plain' });
+          break;
+
+        case 'rgb-to-hex':
+          const rgbText = await files[0].text();
+          const match = rgbText.match(/(\d+),\s*(\d+),\s*(\d+)/);
+          if (match) {
+            const hex = rgbToHex(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
+            outputBlob = new Blob([hex], { type: 'text/plain' });
+          }
+          break;
+
+        case 'hex-to-hsl':
+          const hexForHsl = await files[0].text();
+          const hsl = hexToHsl(hexForHsl.trim());
+          outputBlob = new Blob([`hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`], { type: 'text/plain' });
+          break;
+
+        // Data format conversions
+        case 'tsv-to-csv':
+          const tsvText = await files[0].text();
+          const csvFromTsv = tsvToCSV(tsvText);
+          outputBlob = new Blob([csvFromTsv], { type: 'text/csv' });
+          break;
+
+        case 'csv-to-tsv':
+          const csvText = await files[0].text();
+          const tsvFromCsv = csvToTSV(csvText);
+          outputBlob = new Blob([tsvFromCsv], { type: 'text/tab-separated-values' });
+          break;
+
+        case 'html-table-to-csv':
+          const htmlText = await files[0].text();
+          const csvFromTable = htmlTableToCSV(htmlText);
+          outputBlob = new Blob([csvFromTable], { type: 'text/csv' });
+          break;
+
+        case 'color-picker':
+          const colors = await extractColorPalette(files[0], 5);
+          const colorOutput = colors.join('\n');
+          outputBlob = new Blob([colorOutput], { type: 'text/plain' });
+          break;
+
+        case 'random-color-generator':
+          const randomColors = Array.from({ length: 10 }, () => generateRandomColor());
+          const randomOutput = randomColors.join('\n');
+          outputBlob = new Blob([randomOutput], { type: 'text/plain' });
+          break;
+
         default:
           throw new Error('Conversion not yet implemented');
       }
@@ -447,7 +592,8 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
     setTextInput('');
   };
 
-  const needsTextInput = ['html-to-pdf', 'txt-to-pdf', 'markdown-to-pdf', 'markdown-to-html', 'json-to-csv', 'json-to-xlsx', 'json-to-xml', 'json-to-yaml', 'base64-encode', 'base64-decode', 'url-encode', 'url-decode', 'generate-qr', 'generate-barcode', 'html-to-markdown'].includes(conversion.id);
+  const needsTextInput = ['html-to-pdf', 'txt-to-pdf', 'markdown-to-pdf', 'markdown-to-html', 'json-to-csv', 'json-to-xlsx', 'json-to-xml', 'json-to-yaml', 'base64-encode', 'base64-decode', 'url-encode', 'url-decode', 'generate-qr', 'generate-barcode', 'html-to-markdown', 'hex-to-rgb', 'rgb-to-hex', 'hex-to-hsl'].includes(conversion.id);
+  const needsNoFile = ['random-color-generator'].includes(conversion.id);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -492,11 +638,22 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
               </div>
             )}
 
-            <FileUploader
-              onFilesSelected={setFiles}
-              accept={conversion.from === 'image' ? 'image/*' : undefined}
-              multiple={['merge-pdf', 'create-zip', 'jpg-to-pdf', 'png-to-pdf'].includes(conversion.id)}
-            />
+            {!needsNoFile && (
+              <FileUploader
+                onFilesSelected={setFiles}
+                accept={
+                  conversion.from === 'image' ? 'image/*' :
+                  conversion.from === 'text' ? 'text/*,.txt' :
+                  conversion.from === 'json' ? '.json' :
+                  conversion.from === 'yaml' ? '.yaml,.yml' :
+                  conversion.from === 'xml' ? '.xml' :
+                  conversion.from === 'html' ? '.html' :
+                  conversion.from === 'color' ? 'text/*,.txt' :
+                  undefined
+                }
+                multiple={['merge-pdf', 'create-zip', 'jpg-to-pdf', 'png-to-pdf', 'images-to-pdf-merge'].includes(conversion.id)}
+              />
+            )}
 
             {conversion.category === 'image' && files.length > 0 && (
               <div className="mt-6 p-4 bg-gray-50 rounded-xl">
@@ -571,7 +728,73 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
               </div>
             )}
 
-            {(files.length > 0 || (needsTextInput && textInput.trim())) && !converting && (
+            {conversion.id === 'image-brightness' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Brightness</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Brightness: {options.brightness || 100}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="200"
+                      step="5"
+                      value={options.brightness || 100}
+                      onChange={(e) => setOptions({ ...options, brightness: parseInt(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {conversion.id === 'find-replace' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Find & Replace</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Find</label>
+                    <input
+                      type="text"
+                      value={options.findText || ''}
+                      onChange={(e) => setOptions({ ...options, findText: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="Text to find"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Replace with</label>
+                    <input
+                      type="text"
+                      value={options.replaceText || ''}
+                      onChange={(e) => setOptions({ ...options, replaceText: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="Replacement text"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {needsNoFile ? (
+              <div className="mt-6">
+                <button
+                  onClick={async () => {
+                    setConverting(true);
+                    const randomColors = Array.from({ length: 10 }, () => generateRandomColor());
+                    const randomOutput = randomColors.join('\n');
+                    const blob = new Blob([randomOutput], { type: 'text/plain' });
+                    setResult(blob);
+                    setConverting(false);
+                  }}
+                  className="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg"
+                >
+                  Generate 10 Random Colors
+                </button>
+              </div>
+            ) : (files.length > 0 || (needsTextInput && textInput.trim())) && !converting && (
               <button
                 onClick={handleConvert}
                 className="mt-6 w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg"

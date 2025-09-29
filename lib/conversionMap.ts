@@ -144,6 +144,46 @@ export const conversions: ConversionType[] = [
   { id: 'speech-to-text', name: 'Speech to Text', from: 'audio', to: 'text', category: 'utility', description: 'Convert speech to text' },
   { id: 'color-picker', name: 'Color Picker', from: 'image', to: 'color', category: 'utility', description: 'Extract colors from images' },
   { id: 'image-to-ascii', name: 'Image to ASCII', from: 'image', to: 'text', category: 'utility', description: 'Convert images to ASCII art' },
+
+  // TEXT UTILITIES (10 new)
+  { id: 'word-counter', name: 'Word Counter', from: 'text', to: 'analysis', category: 'utility', description: 'Count words, characters, sentences, and paragraphs' },
+  { id: 'case-converter-upper', name: 'Convert to UPPERCASE', from: 'text', to: 'text', category: 'utility', description: 'Convert text to uppercase' },
+  { id: 'case-converter-lower', name: 'Convert to lowercase', from: 'text', to: 'text', category: 'utility', description: 'Convert text to lowercase' },
+  { id: 'case-converter-title', name: 'Convert to Title Case', from: 'text', to: 'text', category: 'utility', description: 'Convert text to title case' },
+  { id: 'remove-duplicates', name: 'Remove Duplicate Lines', from: 'text', to: 'text', category: 'utility', description: 'Remove duplicate lines from text' },
+  { id: 'sort-lines', name: 'Sort Lines Alphabetically', from: 'text', to: 'text', category: 'utility', description: 'Sort text lines A-Z' },
+  { id: 'reverse-text', name: 'Reverse Text', from: 'text', to: 'text', category: 'utility', description: 'Reverse text content' },
+  { id: 'find-replace', name: 'Find & Replace', from: 'text', to: 'text', category: 'utility', description: 'Find and replace text' },
+  { id: 'json-formatter', name: 'Format JSON', from: 'json', to: 'json', category: 'data', description: 'Format and validate JSON', popular: true },
+  { id: 'json-minify', name: 'Minify JSON', from: 'json', to: 'json', category: 'data', description: 'Minify JSON (remove whitespace)' },
+
+  // IMAGE UTILITIES (8 new)
+  { id: 'image-rotate-90', name: 'Rotate Image 90°', from: 'image', to: 'image', category: 'image', description: 'Rotate image 90 degrees clockwise' },
+  { id: 'image-rotate-180', name: 'Rotate Image 180°', from: 'image', to: 'image', category: 'image', description: 'Rotate image 180 degrees' },
+  { id: 'image-rotate-270', name: 'Rotate Image 270°', from: 'image', to: 'image', category: 'image', description: 'Rotate image 270 degrees' },
+  { id: 'image-flip-horizontal', name: 'Flip Horizontal', from: 'image', to: 'image', category: 'image', description: 'Flip image horizontally' },
+  { id: 'image-flip-vertical', name: 'Flip Vertical', from: 'image', to: 'image', category: 'image', description: 'Flip image vertically' },
+  { id: 'image-grayscale', name: 'Convert to Grayscale', from: 'image', to: 'image', category: 'image', description: 'Make image black and white' },
+  { id: 'image-invert', name: 'Invert Colors', from: 'image', to: 'image', category: 'image', description: 'Invert image colors' },
+  { id: 'image-brightness', name: 'Adjust Brightness', from: 'image', to: 'image', category: 'image', description: 'Make image brighter or darker' },
+
+  // PDF UTILITIES (5 new)
+  { id: 'pdf-add-page-numbers', name: 'Add Page Numbers', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Add page numbers to PDF' },
+  { id: 'pdf-reverse-pages', name: 'Reverse Page Order', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Reverse the order of PDF pages' },
+  { id: 'pdf-extract-pages', name: 'Extract Specific Pages', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Extract specific pages from PDF' },
+  { id: 'pdf-remove-pages', name: 'Remove Specific Pages', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Remove specific pages from PDF' },
+  { id: 'images-to-pdf-merge', name: 'Images to Single PDF', from: 'images', to: 'pdf', category: 'pdf', description: 'Combine multiple images into one PDF' },
+
+  // COLOR UTILITIES (5 new)
+  { id: 'hex-to-rgb', name: 'HEX to RGB', from: 'color', to: 'color', category: 'utility', description: 'Convert HEX color to RGB' },
+  { id: 'rgb-to-hex', name: 'RGB to HEX', from: 'color', to: 'color', category: 'utility', description: 'Convert RGB color to HEX' },
+  { id: 'hex-to-hsl', name: 'HEX to HSL', from: 'color', to: 'color', category: 'utility', description: 'Convert HEX color to HSL' },
+  { id: 'random-color-generator', name: 'Random Color Generator', from: 'none', to: 'color', category: 'utility', description: 'Generate random colors' },
+
+  // DATA FORMAT CONVERTERS (7 new)
+  { id: 'tsv-to-csv', name: 'TSV to CSV', from: 'tsv', to: 'csv', category: 'data', description: 'Convert tab-separated to comma-separated' },
+  { id: 'csv-to-tsv', name: 'CSV to TSV', from: 'csv', to: 'tsv', category: 'data', description: 'Convert comma-separated to tab-separated' },
+  { id: 'html-table-to-csv', name: 'HTML Table to CSV', from: 'html', to: 'csv', category: 'data', description: 'Extract HTML table to CSV' },
 ];
 
 export const categories = [
