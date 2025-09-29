@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { GoogleAnalytics } from '@next/third-parties/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 
@@ -13,20 +14,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        {/* Google tag (gtag.js) */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-EJ0XSFKCTQ"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-EJ0XSFKCTQ');
-            `,
-          }}
-        />
-      </head>
       <body className={inter.className}>
         <Navbar />
         <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
@@ -38,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <p className="text-sm">No uploads, no storage, complete privacy.</p>
           </div>
         </footer>
+        <GoogleAnalytics gaId="G-EJ0XSFKCTQ" />
       </body>
     </html>
   );

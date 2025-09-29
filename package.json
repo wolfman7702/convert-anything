@@ -12,6 +12,7 @@
     "@ffmpeg/ffmpeg": "^0.12.10",
     "@ffmpeg/util": "^0.12.1",
     "@imgly/background-removal": "^1.7.0",
+    "@next/third-parties": "^15.5.4",
     "browser-image-compression": "^2.0.2",
     "docx": "^8.5.0",
     "html-docx-js": "^0.3.1",

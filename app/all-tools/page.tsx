@@ -2,25 +2,10 @@ import { conversions, categories } from '@/lib/conversionMap';
 import FileTypeIcon from '@/components/FileTypeIcon';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import Script from 'next/script';
 
 export default function AllToolsPage() {
   return (
-    <>
-      {/* Google tag (gtag.js) */}
-      <Script
-        src="https://www.googletagmanager.com/gtag/js?id=G-EJ0XSFKCTQ"
-        strategy="afterInteractive"
-      />
-      <Script id="google-analytics" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-EJ0XSFKCTQ');
-        `}
-      </Script>
-      <div className="max-w-7xl mx-auto space-y-12">
+    <div className="max-w-7xl mx-auto space-y-12">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">All Conversion Tools</h1>
         <p className="text-lg text-gray-600">Browse all 185+ conversion tools organized by category</p>
@@ -72,8 +57,7 @@ export default function AllToolsPage() {
           </div>
         );
       })}
-      </div>
-    </>
+    </div>
   );
 }
 

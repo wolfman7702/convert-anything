@@ -4,27 +4,12 @@ import FileTypeIcon from '@/components/FileTypeIcon';
 import { getPopularConversions } from '@/lib/conversionMap';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import Script from 'next/script';
 
 export default function Home() {
   const popularConversions = getPopularConversions();
 
   return (
-    <>
-      {/* Google tag (gtag.js) */}
-      <Script
-        src="https://www.googletagmanager.com/gtag/js?id=G-EJ0XSFKCTQ"
-        strategy="afterInteractive"
-      />
-      <Script id="google-analytics" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-EJ0XSFKCTQ');
-        `}
-      </Script>
-      <div className="max-w-7xl mx-auto space-y-16">
+    <div className="max-w-7xl mx-auto space-y-16">
       <div className="text-center space-y-6">
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900">
           <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ConvertingHub</span> - Convert Anything
@@ -131,8 +116,7 @@ export default function Home() {
           <p className="text-gray-600">Convert as many files as you want. No registration, no limits, no restrictions.</p>
         </div>
       </div>
-      </div>
-    </>
+    </div>
   );
 }
 
