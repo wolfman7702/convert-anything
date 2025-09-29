@@ -1,0 +1,31 @@
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import Navbar from '@/components/Navbar';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'ConvertAnything - Free Online File Converter',
+  description: 'Convert images, PDFs, videos, audio, documents, and more. 110+ conversion tools. 100% free and private.',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>
+        <Navbar />
+        <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
+          {children}
+        </main>
+        <footer className="bg-white border-t py-8">
+          <div className="max-w-7xl mx-auto px-4 text-center text-gray-600">
+            <p className="mb-2">© 2025 ConvertAnything. All conversions happen in your browser.</p>
+            <p className="text-sm">No uploads, no storage, complete privacy.</p>
+          </div>
+        </footer>
+      </body>
+    </html>
+  );
+}
+
