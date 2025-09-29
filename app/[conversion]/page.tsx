@@ -6,8 +6,9 @@ export function generateStaticParams() {
   return [];
 }
 
-export default function ConversionRoute({ params }: { params: { conversion: string } }) {
-  const conversion = getConversionById(params.conversion);
+export default async function ConversionRoute({ params }: { params: Promise<{ conversion: string }> }) {
+  const { conversion: conversionId } = await params;
+  const conversion = getConversionById(conversionId);
   if (!conversion) {
     notFound();
   }

@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 
-export default function CategoryPage({ params }: { params: { id: string } }) {
-  const category = categories.find(c => c.id === params.id);
+export default async function CategoryPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const category = categories.find(c => c.id === id);
   if (!category) {
     notFound();
   }
-  const conversions = getConversionsByCategory(params.id);
+  const conversions = getConversionsByCategory(id);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">

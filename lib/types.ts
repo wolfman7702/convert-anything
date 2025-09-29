@@ -19,6 +19,9 @@ export interface ConversionOptions {
   startTime?: number;
   endTime?: number;
   fps?: number;
+  brightness?: number;
+  findText?: string;
+  replaceText?: string;
   [key: string]: any;
 }
 
