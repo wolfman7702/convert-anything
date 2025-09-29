@@ -1,23 +1,22 @@
 import Link from 'next/link';
-import Head from 'next/head';
+import Script from 'next/script';
 
 export default function NotFound() {
   return (
     <>
-      <Head>
-        {/* Google tag (gtag.js) */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-EJ0XSFKCTQ"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-EJ0XSFKCTQ');
-            `,
-          }}
-        />
-      </Head>
+      {/* Google tag (gtag.js) */}
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-EJ0XSFKCTQ"
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-EJ0XSFKCTQ');
+        `}
+      </Script>
       <div className="max-w-2xl mx-auto text-center py-20">
       <div className="text-6xl mb-6">🔍</div>
       <h1 className="text-4xl font-bold text-gray-900 mb-4">Page Not Found</h1>

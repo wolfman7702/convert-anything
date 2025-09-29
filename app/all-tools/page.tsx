@@ -2,25 +2,24 @@ import { conversions, categories } from '@/lib/conversionMap';
 import FileTypeIcon from '@/components/FileTypeIcon';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import Head from 'next/head';
+import Script from 'next/script';
 
 export default function AllToolsPage() {
   return (
     <>
-      <Head>
-        {/* Google tag (gtag.js) */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-EJ0XSFKCTQ"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-EJ0XSFKCTQ');
-            `,
-          }}
-        />
-      </Head>
+      {/* Google tag (gtag.js) */}
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-EJ0XSFKCTQ"
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-EJ0XSFKCTQ');
+        `}
+      </Script>
       <div className="max-w-7xl mx-auto space-y-12">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">All Conversion Tools</h1>
