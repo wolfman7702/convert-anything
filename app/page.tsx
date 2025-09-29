@@ -15,7 +15,7 @@ export default function Home() {
           Convert <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Anything</span> to Anything
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          145+ free file conversion tools. Images, PDFs, videos, documents, and more.
+          185+ free file conversion tools. Images, PDFs, videos, documents, and more.
           Everything happens in your browser - completely private and secure.
         </p>
         <div className="pt-6">

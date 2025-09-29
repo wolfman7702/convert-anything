@@ -1,10 +1,10 @@
 # ConvertAnything - Free Online File Converter
 
-A comprehensive client-side file conversion website with 145+ different file conversions that work entirely in the browser without any server processing.
+A comprehensive client-side file conversion website with 185+ different file conversions that work entirely in the browser without any server processing.
 
 ## Features
 
-- **145+ Conversion Tools** - Images, PDFs, videos, audio, documents, data formats, archives, and utilities
+- **185+ Conversion Tools** - Images, PDFs, videos, audio, documents, data formats, archives, and utilities
 - **100% Private** - All conversions happen in your browser, files never leave your device
 - **No Registration** - Use immediately without signing up
 - **No Limits** - Convert as many files as you want

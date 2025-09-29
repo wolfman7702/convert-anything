@@ -1,5 +1,6 @@
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
+import QRCodeStyling from 'qr-code-styling';
 
 export async function generateQRCode(text: string, size: number = 256): Promise<Blob> {
   const canvas = document.createElement('canvas');
@@ -7,6 +8,36 @@ export async function generateQRCode(text: string, size: number = 256): Promise<
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob!), 'image/png');
   });
+}
+
+export async function generateStyledQRCode(
+  text: string,
+  style: any,
+  size: number = 300,
+  color: string = '#000000'
+): Promise<Blob> {
+  const qrCode = new QRCodeStyling({
+    width: size,
+    height: size,
+    data: text,
+    dotsOptions: {
+      color: color,
+      ...style.dotsOptions
+    },
+    cornersSquareOptions: style.cornersSquareOptions ? {
+      color: color,
+      ...style.cornersSquareOptions
+    } : undefined,
+    cornersDotOptions: style.cornersDotOptions ? {
+      color: color,
+      ...style.cornersDotOptions
+    } : undefined,
+    backgroundOptions: {
+      color: '#ffffff',
+    },
+  });
+
+  return await qrCode.getRawData('png') as Blob;
 }
 
 export async function generateBarcode(text: string, format: string = 'CODE128'): Promise<Blob> {

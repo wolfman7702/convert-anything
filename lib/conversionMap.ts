@@ -185,6 +185,39 @@ export const conversions: ConversionType[] = [
   { id: 'tsv-to-csv', name: 'TSV to CSV', from: 'tsv', to: 'csv', category: 'data', description: 'Convert tab-separated to comma-separated' },
   { id: 'csv-to-tsv', name: 'CSV to TSV', from: 'csv', to: 'tsv', category: 'data', description: 'Convert comma-separated to tab-separated' },
   { id: 'html-table-to-csv', name: 'HTML Table to CSV', from: 'html', to: 'csv', category: 'data', description: 'Extract HTML table to CSV' },
+
+  // IMAGE ENHANCEMENTS (8 new)
+  { id: 'remove-background', name: 'Remove Background', from: 'image', to: 'png', category: 'image', description: 'Remove image background automatically', popular: true },
+  { id: 'image-blur', name: 'Blur Image', from: 'image', to: 'image', category: 'image', description: 'Apply blur effect to image' },
+  { id: 'image-sharpen', name: 'Sharpen Image', from: 'image', to: 'image', category: 'image', description: 'Sharpen image details' },
+  { id: 'image-contrast', name: 'Adjust Contrast', from: 'image', to: 'image', category: 'image', description: 'Adjust image contrast' },
+  { id: 'image-saturation', name: 'Adjust Saturation', from: 'image', to: 'image', category: 'image', description: 'Adjust color saturation' },
+  { id: 'image-sepia', name: 'Sepia Filter', from: 'image', to: 'image', category: 'image', description: 'Apply sepia tone effect' },
+  { id: 'add-image-border', name: 'Add Border', from: 'image', to: 'image', category: 'image', description: 'Add border to image' },
+  { id: 'image-pixelate', name: 'Pixelate Image', from: 'image', to: 'image', category: 'image', description: 'Apply pixelation effect' },
+
+  // PDF ENHANCEMENTS (4 new)
+  { id: 'pdf-to-word', name: 'PDF to Word', from: 'pdf', to: 'docx', category: 'pdf', description: 'Convert PDF to editable Word document' },
+  { id: 'pdf-to-excel', name: 'PDF to Excel', from: 'pdf', to: 'xlsx', category: 'pdf', description: 'Extract tables from PDF to Excel', popular: true },
+  { id: 'pdf-add-watermark', name: 'Add Watermark to PDF', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Add text watermark to PDF pages' },
+  { id: 'pdf-password', name: 'Password Protect PDF', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Add password protection to PDF' },
+
+  // VIDEO ENHANCEMENTS (4 new)
+  { id: 'video-add-audio', name: 'Add Audio to Video', from: 'video', to: 'video', category: 'video', description: 'Combine video with audio track' },
+  { id: 'video-mute', name: 'Remove Audio from Video', from: 'video', to: 'video', category: 'video', description: 'Remove audio track from video' },
+  { id: 'video-reverse', name: 'Reverse Video', from: 'video', to: 'video', category: 'video', description: 'Play video in reverse' },
+  { id: 'video-loop', name: 'Loop Video', from: 'video', to: 'video', category: 'video', description: 'Create looping video' },
+
+  // AUDIO ENHANCEMENTS (3 new)
+  { id: 'audio-merge', name: 'Merge Audio Files', from: 'audio', to: 'audio', category: 'audio', description: 'Combine multiple audio files' },
+  { id: 'audio-normalize', name: 'Normalize Audio', from: 'audio', to: 'audio', category: 'audio', description: 'Normalize audio volume' },
+  { id: 'audio-fade', name: 'Audio Fade In/Out', from: 'audio', to: 'audio', category: 'audio', description: 'Add fade effects to audio' },
+
+  // TEXT & CODE (4 new)
+  { id: 'minify-css', name: 'Minify CSS', from: 'css', to: 'css', category: 'utility', description: 'Minify CSS code' },
+  { id: 'minify-js', name: 'Minify JavaScript', from: 'js', to: 'js', category: 'utility', description: 'Minify JavaScript code' },
+  { id: 'beautify-css', name: 'Beautify CSS', from: 'css', to: 'css', category: 'utility', description: 'Format CSS code' },
+  { id: 'beautify-js', name: 'Beautify JavaScript', from: 'js', to: 'js', category: 'utility', description: 'Format JavaScript code' },
 ];
 
 export const categories = [

@@ -5,6 +5,7 @@ import FileUploader from './FileUploader';
 import ConversionProgress from './ConversionProgress';
 import DownloadButton from './DownloadButton';
 import FileTypeIcon from './FileTypeIcon';
+import QRStyleSelector, { qrStyles } from './QRStyleSelector';
 import { ArrowRight } from 'lucide-react';
 import { ConversionType, ConversionOptions } from '@/lib/types';
 import { convertImage, compressImage, resizeImage } from '@/lib/converters/imageConverter';
@@ -14,9 +15,9 @@ import { docxToHTML, docxToText, docxToPDF, htmlToText, markdownToHTML, markdown
 import { csvToJSON, jsonToCSV, xlsxToCSV, csvToXLSX, xlsxToJSON, jsonToXLSX, base64Encode, base64Decode, urlEncode, urlDecode, csvToXML } from '@/lib/converters/dataConverter';
 import { jsonToXML, xmlToJSON, yamlToJSON, jsonToYAML, tsvToCSV, csvToTSV, htmlTableToCSV } from '@/lib/converters/dataFormatConverter';
 import { createZip, extractZip, gzipCompress, gzipDecompress } from '@/lib/converters/archiveConverter';
-import { generateQRCode, generateBarcode, svgToPNG, svgToJPG, svgToPDF, extractColorsFromImage, imageToASCII } from '@/lib/converters/utilityConverter';
+import { generateQRCode, generateStyledQRCode, generateBarcode, svgToPNG, svgToJPG, svgToPDF, extractColorsFromImage, imageToASCII } from '@/lib/converters/utilityConverter';
 import { countWords, convertCase, removeDuplicateLines, sortLines, reverseText, findReplace, formatJSON, minifyJSON } from '@/lib/converters/textConverter';
-import { rotateImage as rotateImageNew, flipImage as flipImageNew, grayscaleImage, invertImage, adjustBrightness, extractColorPalette } from '@/lib/converters/imageManipulation';
+import { rotateImage as rotateImageNew, flipImage as flipImageNew, grayscaleImage, invertImage, adjustBrightness, extractColorPalette, removeImageBackground, blurImage, adjustContrast, adjustSaturation, sepiaFilter, addBorder, pixelateImage } from '@/lib/converters/imageManipulation';
 import { hexToRgb, rgbToHex, hexToHsl, generateRandomColor } from '@/lib/converters/colorConverter';
 
 interface ConversionPageProps {
@@ -213,6 +214,62 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         return `${baseName}.tsv`;
       case 'html-table-to-csv':
         return 'table-data.csv';
+      
+      // New image enhancements
+      case 'remove-background':
+        return `no-background.png`;
+      case 'image-blur':
+        return `blurred${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'image-sharpen':
+        return `sharpened${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'image-contrast':
+        return `contrast${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'image-saturation':
+        return `saturated${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'image-sepia':
+        return `sepia${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'add-image-border':
+        return `bordered${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'image-pixelate':
+        return `pixelated${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      
+      // New PDF conversions
+      case 'pdf-to-word':
+        return `${baseName}.docx`;
+      case 'pdf-to-excel':
+        return `${baseName}.xlsx`;
+      case 'pdf-add-watermark':
+        return `watermarked${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.pdf' : '.pdf'}`;
+      case 'pdf-password':
+        return `protected${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.pdf' : '.pdf'}`;
+      
+      // New video conversions
+      case 'video-add-audio':
+        return `with-audio${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp4' : '.mp4'}`;
+      case 'video-mute':
+        return `muted${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp4' : '.mp4'}`;
+      case 'video-reverse':
+        return `reversed${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp4' : '.mp4'}`;
+      case 'video-loop':
+        return `looped${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp4' : '.mp4'}`;
+      
+      // New audio conversions
+      case 'audio-merge':
+        return `merged${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp3' : '.mp3'}`;
+      case 'audio-normalize':
+        return `normalized${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp3' : '.mp3'}`;
+      case 'audio-fade':
+        return `faded${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp3' : '.mp3'}`;
+      
+      // New code formatting
+      case 'minify-css':
+        return `minified${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.css' : '.css'}`;
+      case 'minify-js':
+        return `minified${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.js' : '.js'}`;
+      case 'beautify-css':
+        return `beautified${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.css' : '.css'}`;
+      case 'beautify-js':
+        return `beautified${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.js' : '.js'}`;
       
       // Default case - use conversion.to if available
       default:
@@ -459,7 +516,13 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
 
         // Utility conversions
         case 'generate-qr':
-          outputBlob = await generateQRCode(textInput);
+          const selectedStyle = qrStyles.find(s => s.id === (options.qrStyle || 'classic'));
+          outputBlob = await generateStyledQRCode(
+            textInput,
+            selectedStyle,
+            options.qrSize || 300,
+            options.qrColor || '#000000'
+          );
           break;
         case 'generate-barcode':
           outputBlob = await generateBarcode(textInput);
@@ -627,6 +690,94 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           outputBlob = new Blob([randomOutput], { type: 'text/plain' });
           break;
 
+        // New image enhancement cases
+        case 'remove-background':
+          outputBlob = await removeImageBackground(files[0]);
+          break;
+
+        case 'image-blur':
+          const blurAmount = options.blurAmount || 10;
+          outputBlob = await blurImage(files[0], blurAmount);
+          break;
+
+        case 'image-contrast':
+          const contrast = options.contrast || 100;
+          outputBlob = await adjustContrast(files[0], contrast);
+          break;
+
+        case 'image-saturation':
+          const saturation = options.saturation || 100;
+          outputBlob = await adjustSaturation(files[0], saturation);
+          break;
+
+        case 'image-sepia':
+          outputBlob = await sepiaFilter(files[0]);
+          break;
+
+        case 'add-image-border':
+          const borderWidth = options.borderWidth || 20;
+          const borderColor = options.borderColor || '#000000';
+          outputBlob = await addBorder(files[0], borderWidth, borderColor);
+          break;
+
+        case 'image-pixelate':
+          const pixelSize = options.pixelSize || 10;
+          outputBlob = await pixelateImage(files[0], pixelSize);
+          break;
+
+        // New PDF cases (placeholder implementations)
+        case 'pdf-to-word':
+          // Placeholder - would need a PDF to Word converter
+          throw new Error('PDF to Word conversion not yet implemented');
+
+        case 'pdf-to-excel':
+          // Placeholder - would need a PDF to Excel converter
+          throw new Error('PDF to Excel conversion not yet implemented');
+
+        case 'pdf-add-watermark':
+          // Placeholder - would need watermark functionality
+          throw new Error('PDF watermarking not yet implemented');
+
+        case 'pdf-password':
+          // Placeholder - would need password protection
+          throw new Error('PDF password protection not yet implemented');
+
+        // New video cases (placeholder implementations)
+        case 'video-add-audio':
+          throw new Error('Video audio addition not yet implemented');
+
+        case 'video-mute':
+          throw new Error('Video muting not yet implemented');
+
+        case 'video-reverse':
+          throw new Error('Video reversal not yet implemented');
+
+        case 'video-loop':
+          throw new Error('Video looping not yet implemented');
+
+        // New audio cases (placeholder implementations)
+        case 'audio-merge':
+          throw new Error('Audio merging not yet implemented');
+
+        case 'audio-normalize':
+          throw new Error('Audio normalization not yet implemented');
+
+        case 'audio-fade':
+          throw new Error('Audio fade effects not yet implemented');
+
+        // New code formatting cases (placeholder implementations)
+        case 'minify-css':
+          throw new Error('CSS minification not yet implemented');
+
+        case 'minify-js':
+          throw new Error('JavaScript minification not yet implemented');
+
+        case 'beautify-css':
+          throw new Error('CSS beautification not yet implemented');
+
+        case 'beautify-js':
+          throw new Error('JavaScript beautification not yet implemented');
+
         default:
           throw new Error('Conversion not yet implemented');
       }
@@ -700,8 +851,8 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
             )}
 
             {!needsNoFile && (
-              <FileUploader
-                onFilesSelected={setFiles}
+            <FileUploader
+              onFilesSelected={setFiles}
                 accept={
                   conversion.from === 'image' ? 'image/*' :
                   conversion.from === 'text' ? 'text/*,.txt' :
@@ -710,6 +861,10 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
                   conversion.from === 'xml' ? '.xml' :
                   conversion.from === 'html' ? '.html' :
                   conversion.from === 'color' ? 'text/*,.txt' :
+                  conversion.from === 'css' ? '.css' :
+                  conversion.from === 'js' ? '.js,.jsx,.ts,.tsx' :
+                  conversion.from === 'audio' ? 'audio/*' :
+                  conversion.from === 'video' ? 'video/*' :
                   undefined
                 }
                 multiple={['merge-pdf', 'create-zip', 'jpg-to-pdf', 'png-to-pdf', 'images-to-pdf-merge'].includes(conversion.id)}
@@ -836,6 +991,203 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
                     />
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* QR Code Options */}
+            {conversion.id === 'generate-qr' && textInput.trim() && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">QR Code Options</h3>
+                <div className="space-y-4">
+                  <QRStyleSelector
+                    selectedStyle={options.qrStyle || 'classic'}
+                    onStyleChange={(style) => setOptions({ ...options, qrStyle: style })}
+                  />
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Size: {options.qrSize || 300}px
+                    </label>
+                    <input
+                      type="range"
+                      min="200"
+                      max="800"
+                      step="50"
+                      value={options.qrSize || 300}
+                      onChange={(e) => setOptions({ ...options, qrSize: parseInt(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                    <input
+                      type="color"
+                      value={options.qrColor || '#000000'}
+                      onChange={(e) => setOptions({ ...options, qrColor: e.target.value })}
+                      className="w-full h-10 rounded-lg"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Image Effect Options */}
+            {conversion.id === 'image-blur' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Blur Settings</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Blur Amount: {options.blurAmount || 10}px
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="50"
+                    step="1"
+                    value={options.blurAmount || 10}
+                    onChange={(e) => setOptions({ ...options, blurAmount: parseInt(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            )}
+
+            {conversion.id === 'image-contrast' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Contrast Settings</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Contrast: {options.contrast || 100}%
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="200"
+                    step="5"
+                    value={options.contrast || 100}
+                    onChange={(e) => setOptions({ ...options, contrast: parseInt(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            )}
+
+            {conversion.id === 'image-saturation' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Saturation Settings</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Saturation: {options.saturation || 100}%
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="200"
+                    step="5"
+                    value={options.saturation || 100}
+                    onChange={(e) => setOptions({ ...options, saturation: parseInt(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            )}
+
+            {conversion.id === 'add-image-border' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Border Settings</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Border Width: {options.borderWidth || 20}px
+                    </label>
+                    <input
+                      type="range"
+                      min="5"
+                      max="100"
+                      step="5"
+                      value={options.borderWidth || 20}
+                      onChange={(e) => setOptions({ ...options, borderWidth: parseInt(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Border Color</label>
+                    <input
+                      type="color"
+                      value={options.borderColor || '#000000'}
+                      onChange={(e) => setOptions({ ...options, borderColor: e.target.value })}
+                      className="w-full h-10 rounded-lg"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {conversion.id === 'image-pixelate' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Pixelation Settings</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pixel Size: {options.pixelSize || 10}px
+                  </label>
+                  <input
+                    type="range"
+                    min="2"
+                    max="50"
+                    step="1"
+                    value={options.pixelSize || 10}
+                    onChange={(e) => setOptions({ ...options, pixelSize: parseInt(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* PDF Options */}
+            {conversion.id === 'compress-pdf' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Compression Level</h3>
+                <select
+                  value={options.compressionLevel || 'medium'}
+                  onChange={(e) => setOptions({ ...options, compressionLevel: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="low">Low (Better Quality)</option>
+                  <option value="medium">Medium (Balanced)</option>
+                  <option value="high">High (Smaller Size)</option>
+                </select>
+              </div>
+            )}
+
+            {conversion.id === 'merge-pdf' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Page Order</h3>
+                <div className="text-sm text-gray-600 mb-2">Files will be merged in this order:</div>
+                <div className="space-y-2">
+                  {files.map((file, idx) => (
+                    <div key={idx} className="flex items-center space-x-2 p-2 bg-white rounded border">
+                      <span className="font-medium">{idx + 1}.</span>
+                      <span className="text-sm truncate">{file.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Text Analysis Options */}
+            {conversion.id === 'word-counter' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Analysis Options</h3>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={options.includeWordFrequency || false}
+                    onChange={(e) => setOptions({ ...options, includeWordFrequency: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Include word frequency analysis</span>
+                </label>
               </div>
             )}
 
