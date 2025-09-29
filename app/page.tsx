@@ -1,6 +1,7 @@
 import SearchBar from '@/components/SearchBar';
 import CategoryGrid from '@/components/CategoryGrid';
 import FileTypeIcon from '@/components/FileTypeIcon';
+import GoogleAnalyticsDebug from '@/components/GoogleAnalyticsDebug';
 import { getPopularConversions } from '@/lib/conversionMap';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -116,6 +117,7 @@ export default function Home() {
           <p className="text-gray-600">Convert as many files as you want. No registration, no limits, no restrictions.</p>
         </div>
       </div>
+      <GoogleAnalyticsDebug />
     </div>
   );
 }
