@@ -3,6 +3,7 @@ import FileTypeIcon from '@/components/FileTypeIcon';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
+import Head from 'next/head';
 
 export default async function CategoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -13,7 +14,22 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
   const conversions = getConversionsByCategory(id);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <>
+      <Head>
+        {/* Google tag (gtag.js) */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-EJ0XSFKCTQ"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-EJ0XSFKCTQ');
+            `,
+          }}
+        />
+      </Head>
+      <div className="max-w-7xl mx-auto space-y-8">
       <div className="text-center space-y-4">
         <div className="text-6xl">{category.icon}</div>
         <h1 className="text-4xl font-bold text-gray-900">{category.name}</h1>
@@ -53,7 +69,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
           </Link>
         ))}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
