@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import Script from 'next/script';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 
@@ -15,22 +14,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {/* Google tag (gtag.js) */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-EJ0XSFKCTQ"
-          strategy="afterInteractive"
+        {/* Google tag (gtag.js) - Direct HTML approach like Lovable */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-EJ0XSFKCTQ"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-EJ0XSFKCTQ');
+            `,
+          }}
         />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-EJ0XSFKCTQ', {
-              page_path: window.location.pathname,
-            });
-            console.log('Google Analytics loaded:', 'G-EJ0XSFKCTQ');
-          `}
-        </Script>
       </head>
       <body className={inter.className}>
         <Navbar />
