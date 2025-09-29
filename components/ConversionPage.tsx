@@ -154,6 +154,66 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
       case 'gzip-decompress':
         return `${baseName}`;
       
+      // New image manipulation conversions
+      case 'image-rotate-90':
+        return `rotated-90${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'image-rotate-180':
+        return `rotated-180${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'image-rotate-270':
+        return `rotated-270${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'image-flip-horizontal':
+        return `flipped-h${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'image-flip-vertical':
+        return `flipped-v${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'image-grayscale':
+        return `grayscale${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'image-invert':
+        return `inverted${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      case 'image-brightness':
+        return `brightness${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
+      
+      // Text utilities
+      case 'word-counter':
+        return 'word-stats.txt';
+      case 'case-converter-upper':
+        return `uppercase.txt`;
+      case 'case-converter-lower':
+        return `lowercase.txt`;
+      case 'case-converter-title':
+        return `titlecase.txt`;
+      case 'remove-duplicates':
+        return `no-duplicates.txt`;
+      case 'sort-lines':
+        return `sorted.txt`;
+      case 'reverse-text':
+        return `reversed.txt`;
+      case 'find-replace':
+        return `replaced.txt`;
+      case 'json-formatter':
+        return `formatted.json`;
+      case 'json-minify':
+        return `minified.json`;
+      
+      // Color utilities
+      case 'hex-to-rgb':
+        return 'rgb-color.txt';
+      case 'rgb-to-hex':
+        return 'hex-color.txt';
+      case 'hex-to-hsl':
+        return 'hsl-color.txt';
+      case 'color-palette':
+        return 'color-palette.txt';
+      case 'random-color-generator':
+        return 'random-colors.txt';
+      
+      // Data format converters
+      case 'tsv-to-csv':
+        return `${baseName}.csv`;
+      case 'csv-to-tsv':
+        return `${baseName}.tsv`;
+      case 'html-table-to-csv':
+        return 'table-data.csv';
+      
       // Default case - use conversion.to if available
       default:
         return `converted.${conversion.to || 'file'}`;

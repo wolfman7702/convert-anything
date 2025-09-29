@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'ConvertAnything - Free Online File Converter',
-  description: 'Convert images, PDFs, videos, audio, documents, and more. 110+ conversion tools. 100% free and private.',
+  description: 'Convert images, PDFs, videos, audio, documents, and more. 145+ conversion tools. 100% free and private.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
