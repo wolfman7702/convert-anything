@@ -3,41 +3,119 @@ import jsPDF from 'jspdf';
 import { ConversionOptions } from '../types';
 
 export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Promise<Blob[]> {
-  // For now, create a placeholder image with text indicating the limitation
-  // PDF to image conversion requires server-side rendering or specialized libraries
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d')!;
-  canvas.width = 800;
-  canvas.height = 600;
-  
-  // Fill with white background
-  context.fillStyle = '#ffffff';
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  
-  // Add border
-  context.strokeStyle = '#cccccc';
-  context.lineWidth = 2;
-  context.strokeRect(0, 0, canvas.width, canvas.height);
-  
-  // Add text
-  context.fillStyle = '#333333';
-  context.font = '24px Arial';
-  context.textAlign = 'center';
-  context.fillText('PDF to Image Conversion', canvas.width / 2, canvas.height / 2 - 50);
-  
-  context.font = '16px Arial';
-  context.fillText('Client-side PDF to image conversion is limited.', canvas.width / 2, canvas.height / 2);
-  context.fillText('For best results, use specialized PDF tools.', canvas.width / 2, canvas.height / 2 + 30);
-  
-  context.font = '14px Arial';
-  context.fillText(`Original file: ${file.name}`, canvas.width / 2, canvas.height / 2 + 70);
-  context.fillText(`Page 1 of ${file.name}`, canvas.width / 2, canvas.height / 2 + 95);
+  try {
+    // Extract text from PDF and create an image representation
+    const pdfText = await extractTextFromPDF(file);
+    
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d')!;
+    canvas.width = 1200;
+    canvas.height = 1600;
+    
+    // Fill with white background
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add border
+    context.strokeStyle = '#333333';
+    context.lineWidth = 3;
+    context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+    
+    // Add header
+    context.fillStyle = '#2c3e50';
+    context.font = 'bold 28px Arial';
+    context.textAlign = 'center';
+    context.fillText('PDF Content as Image', canvas.width / 2, 80);
+    
+    // Add file info
+    context.font = '16px Arial';
+    context.fillStyle = '#7f8c8d';
+    context.fillText(`File: ${file.name}`, canvas.width / 2, 120);
+    context.fillText(`Converted to ${format.toUpperCase()} format`, canvas.width / 2, 150);
+    
+    // Draw a line
+    context.strokeStyle = '#bdc3c7';
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(60, 180);
+    context.lineTo(canvas.width - 60, 180);
+    context.stroke();
+    
+    // Add the actual PDF text content
+    context.fillStyle = '#2c3e50';
+    context.font = '14px Arial';
+    context.textAlign = 'left';
+    
+    const lines = pdfText.split('\n').filter(line => line.trim().length > 0);
+    const maxLines = Math.min(lines.length, 80); // Limit to fit on page
+    const lineHeight = 20;
+    const startY = 220;
+    const margin = 60;
+    
+    for (let i = 0; i < maxLines; i++) {
+      const line = lines[i];
+      if (line.trim().length > 0) {
+        // Wrap long lines
+        const maxWidth = canvas.width - (margin * 2);
+        const words = line.split(' ');
+        let currentLine = '';
+        let y = startY + (i * lineHeight);
+        
+        for (const word of words) {
+          const testLine = currentLine + (currentLine ? ' ' : '') + word;
+          const metrics = context.measureText(testLine);
+          
+          if (metrics.width > maxWidth && currentLine) {
+            context.fillText(currentLine, margin, y);
+            currentLine = word;
+            y += lineHeight;
+            if (y > canvas.height - 100) break;
+          } else {
+            currentLine = testLine;
+          }
+        }
+        
+        if (currentLine && y <= canvas.height - 100) {
+          context.fillText(currentLine, margin, y);
+        }
+      }
+    }
+    
+    // Add footer
+    context.fillStyle = '#95a5a6';
+    context.font = '12px Arial';
+    context.textAlign = 'center';
+    context.fillText(`Page 1 - ${lines.length} lines of content`, canvas.width / 2, canvas.height - 40);
+    context.fillText('Text extracted from PDF and rendered as image', canvas.width / 2, canvas.height - 20);
 
-  const blob = await new Promise<Blob>((resolve) => {
-    canvas.toBlob((b) => resolve(b!), `image/${format}`);
-  });
-  
-  return [blob];
+    const blob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob((b) => resolve(b!), `image/${format}`);
+    });
+    
+    return [blob];
+  } catch (error) {
+    console.error('Error converting PDF to image:', error);
+    
+    // Fallback to simple placeholder
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d')!;
+    canvas.width = 800;
+    canvas.height = 600;
+    
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    
+    context.fillStyle = '#e74c3c';
+    context.font = '24px Arial';
+    context.textAlign = 'center';
+    context.fillText('PDF to Image Conversion Failed', canvas.width / 2, canvas.height / 2);
+    
+    const blob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob((b) => resolve(b!), `image/${format}`);
+    });
+    
+    return [blob];
+  }
 }
 
 export async function imagesToPDF(files: File[]): Promise<Blob> {
