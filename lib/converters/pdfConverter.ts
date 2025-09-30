@@ -3,8 +3,8 @@ import jsPDF from 'jspdf';
 import * as pdfjsLib from 'pdfjs-dist';
 import { ConversionOptions } from '../types';
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Configure PDF.js worker - try multiple sources for better compatibility
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Promise<Blob[]> {
   const arrayBuffer = await file.arrayBuffer();
@@ -149,15 +149,19 @@ export async function deletePDFPages(file: File, pagesToDelete: number[]): Promi
 }
 
 export async function extractTextFromPDF(file: File): Promise<string> {
+  console.log('Starting PDF text extraction for file:', file.name);
   const arrayBuffer = await file.arrayBuffer();
   const uint8Array = new Uint8Array(arrayBuffer);
   
   try {
+    console.log('Loading PDF document...');
     const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
     const pageCount = pdf.numPages;
+    console.log(`PDF loaded successfully. Pages: ${pageCount}`);
     let extractedText = '';
     
     for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+      console.log(`Processing page ${pageNum}...`);
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       
@@ -167,12 +171,16 @@ export async function extractTextFromPDF(file: File): Promise<string> {
         .join(' ')
         .trim();
       
+      console.log(`Page ${pageNum} text:`, pageText.substring(0, 100) + '...');
+      
       if (pageText) {
         extractedText += pageText + '\n\n';
       }
     }
     
-    return extractedText.trim() || 'No text content found in PDF.';
+    const result = extractedText.trim() || 'No text content found in PDF.';
+    console.log('Final extracted text length:', result.length);
+    return result;
   } catch (error) {
     console.error('PDF text extraction error:', error);
     return 'Error extracting text from PDF. The file may be corrupted or password-protected.';

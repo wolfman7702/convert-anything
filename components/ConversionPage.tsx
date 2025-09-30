@@ -880,6 +880,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         case 'pdf-to-excel':
           // Extract text from PDF and create a simple CSV (which can be opened in Excel)
           const pdfTextForExcel = await extractTextFromPDF(files[0]);
+          console.log('Extracted PDF text:', pdfTextForExcel); // Debug log
           // Convert text to CSV format (one line per paragraph)
           const csvLines = pdfTextForExcel.split('\n').filter(line => line.trim());
           const pdfCsvContent = csvLines.map(line => `"${line.replace(/"/g, '""')}"`).join('\n');
