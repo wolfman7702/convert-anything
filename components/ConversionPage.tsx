@@ -369,15 +369,15 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
       case 'pdf-to-html':
         return `${baseName}.html`;
       case 'pdf-to-powerpoint':
-        return `${baseName}.html`;
+        return `${baseName}.txt`;
       case 'pdf-to-epub':
-        return `${baseName}.html`;
+        return `${baseName}.epub`;
       case 'pdf-to-mobi':
-        return `${baseName}.html`;
+        return `${baseName}.mobi`;
       case 'pdf-to-azw3':
-        return `${baseName}.html`;
+        return `${baseName}.azw3`;
       case 'pdf-to-fb2':
-        return `${baseName}.html`;
+        return `${baseName}.fb2`;
       case 'pdf-to-csv':
         return `${baseName}.csv`;
       case 'pdf-to-rtf':
@@ -1232,27 +1232,84 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           break;
 
         case 'pdf-to-powerpoint':
-          // Extract text from PDF and create a simple PowerPoint-like HTML
+          // Extract text from PDF and create a simple PowerPoint-like content
           const pdfPptContent = await extractTextFromPDF(files[0]);
           const slides = pdfPptContent.split(/\n\s*\n/).filter(s => s.trim().length > 0);
-          let pptHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PDF to PowerPoint</title><style>body{font-family:Arial;margin:20px;}.slide{page-break-after:always;margin-bottom:40px;border:1px solid #ccc;padding:20px;}.slide h1{color:#2c3e50;border-bottom:2px solid #3498db;padding-bottom:10px;}</style></head><body>`;
+          
+          // Create a simple text-based presentation format
+          let pptContent = `PDF to PowerPoint Conversion\n`;
+          pptContent += `Original file: ${files[0].name}\n`;
+          pptContent += `Generated: ${new Date().toLocaleString()}\n\n`;
           
           slides.forEach((slide, index) => {
-            pptHtml += `<div class="slide"><h1>Slide ${index + 1}</h1><p>${slide.trim().replace(/\n/g, '<br>')}</p></div>`;
+            pptContent += `=== SLIDE ${index + 1} ===\n`;
+            pptContent += `${slide.trim()}\n\n`;
           });
           
-          pptHtml += '</body></html>';
-          outputBlob = new Blob([pptHtml], { type: 'text/html' });
+          outputBlob = new Blob([pptContent], { type: 'text/plain' });
           break;
 
         case 'pdf-to-epub':
+          // Extract text from PDF and create EPUB-like content
+          const pdfEpubContent = await extractTextFromPDF(files[0]);
+          const epubContent = `<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="2.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>PDF Content</dc:title>
+    <dc:language>en</dc:language>
+    <dc:identifier id="BookId">pdf-conversion</dc:identifier>
+  </metadata>
+  <manifest>
+    <item id="chapter1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="chapter1"/>
+  </spine>
+</package>`;
+          outputBlob = new Blob([epubContent], { type: 'application/epub+zip' });
+          break;
+
         case 'pdf-to-mobi':
+          // Extract text from PDF and create MOBI-like content
+          const pdfMobiContent = await extractTextFromPDF(files[0]);
+          let mobiContent = `MOBI Ebook Format\n`;
+          mobiContent += `Title: PDF Content\n`;
+          mobiContent += `Author: Converted from PDF\n`;
+          mobiContent += `\nContent:\n${pdfMobiContent}`;
+          outputBlob = new Blob([mobiContent], { type: 'application/x-mobipocket-ebook' });
+          break;
+
         case 'pdf-to-azw3':
+          // Extract text from PDF and create AZW3-like content
+          const pdfAzw3Content = await extractTextFromPDF(files[0]);
+          let azw3Content = `AZW3 Ebook Format\n`;
+          azw3Content += `Title: PDF Content\n`;
+          azw3Content += `Author: Converted from PDF\n`;
+          azw3Content += `\nContent:\n${pdfAzw3Content}`;
+          outputBlob = new Blob([azw3Content], { type: 'application/vnd.amazon.ebook' });
+          break;
+
         case 'pdf-to-fb2':
-          // Extract text from PDF and create a simple ebook-like HTML
-          const pdfEbookContent = await extractTextFromPDF(files[0]);
-          const ebookHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PDF to Ebook</title><style>body{font-family:Georgia,serif;line-height:1.6;max-width:800px;margin:0 auto;padding:20px;}h1{color:#2c3e50;border-bottom:2px solid #3498db;padding-bottom:10px;}p{margin-bottom:15px;}</style></head><body><h1>PDF Content</h1><div>${pdfEbookContent.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</div></body></html>`;
-          outputBlob = new Blob([ebookHtml], { type: 'text/html' });
+          // Extract text from PDF and create FB2-like content
+          const pdfFb2Content = await extractTextFromPDF(files[0]);
+          const fb2Content = `<?xml version="1.0" encoding="UTF-8"?>
+<FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0">
+  <description>
+    <title-info>
+      <book-title>PDF Content</book-title>
+      <author>
+        <first-name>Converted</first-name>
+        <last-name>from PDF</last-name>
+      </author>
+    </title-info>
+  </description>
+  <body>
+    <section>
+      <p>${pdfFb2Content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>
+    </section>
+  </body>
+</FictionBook>`;
+          outputBlob = new Blob([fb2Content], { type: 'application/fb2+xml' });
           break;
 
         case 'pdf-to-csv':

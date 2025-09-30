@@ -4,7 +4,7 @@ import { ConversionOptions } from '../types';
 
 export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Promise<Blob[]> {
   try {
-    // Extract text from PDF and create an image representation
+    // Extract text from PDF and create a clean image representation
     const pdfText = await extractTextFromPDF(file);
     
     const canvas = document.createElement('canvas');
@@ -16,43 +16,17 @@ export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Pr
     context.fillStyle = '#ffffff';
     context.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Add border
-    context.strokeStyle = '#333333';
-    context.lineWidth = 3;
-    context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
-    
-    // Add header
-    context.fillStyle = '#2c3e50';
-    context.font = 'bold 28px Arial';
-    context.textAlign = 'center';
-    context.fillText('PDF Content as Image', canvas.width / 2, 80);
-    
-    // Add file info
+    // Just the PDF content - no extra headers or footers
+    context.fillStyle = '#000000';
     context.font = '16px Arial';
-    context.fillStyle = '#7f8c8d';
-    context.fillText(`File: ${file.name}`, canvas.width / 2, 120);
-    context.fillText(`Converted to ${format.toUpperCase()} format`, canvas.width / 2, 150);
-    
-    // Draw a line
-    context.strokeStyle = '#bdc3c7';
-    context.lineWidth = 1;
-    context.beginPath();
-    context.moveTo(60, 180);
-    context.lineTo(canvas.width - 60, 180);
-    context.stroke();
-    
-    // Add the actual PDF text content
-    context.fillStyle = '#2c3e50';
-    context.font = '14px Arial';
     context.textAlign = 'left';
     
     const lines = pdfText.split('\n').filter(line => line.trim().length > 0);
-    const maxLines = Math.min(lines.length, 80); // Limit to fit on page
-    const lineHeight = 20;
-    const startY = 220;
+    const lineHeight = 24;
+    const startY = 60;
     const margin = 60;
     
-    for (let i = 0; i < maxLines; i++) {
+    for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       if (line.trim().length > 0) {
         // Wrap long lines
@@ -69,24 +43,17 @@ export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Pr
             context.fillText(currentLine, margin, y);
             currentLine = word;
             y += lineHeight;
-            if (y > canvas.height - 100) break;
+            if (y > canvas.height - 40) break;
           } else {
             currentLine = testLine;
           }
         }
         
-        if (currentLine && y <= canvas.height - 100) {
+        if (currentLine && y <= canvas.height - 40) {
           context.fillText(currentLine, margin, y);
         }
       }
     }
-    
-    // Add footer
-    context.fillStyle = '#95a5a6';
-    context.font = '12px Arial';
-    context.textAlign = 'center';
-    context.fillText(`Page 1 - ${lines.length} lines of content`, canvas.width / 2, canvas.height - 40);
-    context.fillText('Text extracted from PDF and rendered as image', canvas.width / 2, canvas.height - 20);
 
     const blob = await new Promise<Blob>((resolve) => {
       canvas.toBlob((b) => resolve(b!), `image/${format}`);
