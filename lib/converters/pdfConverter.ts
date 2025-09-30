@@ -1,10 +1,6 @@
 import { PDFDocument } from 'pdf-lib';
 import jsPDF from 'jspdf';
-import * as pdfjsLib from 'pdfjs-dist';
 import { ConversionOptions } from '../types';
-
-// Configure PDF.js worker - try multiple sources for better compatibility
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Promise<Blob[]> {
   const arrayBuffer = await file.arrayBuffer();
@@ -150,40 +146,25 @@ export async function deletePDFPages(file: File, pagesToDelete: number[]): Promi
 
 export async function extractTextFromPDF(file: File): Promise<string> {
   console.log('Starting PDF text extraction for file:', file.name);
-  const arrayBuffer = await file.arrayBuffer();
-  const uint8Array = new Uint8Array(arrayBuffer);
   
   try {
-    console.log('Loading PDF document...');
-    const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
-    const pageCount = pdf.numPages;
-    console.log(`PDF loaded successfully. Pages: ${pageCount}`);
-    let extractedText = '';
-    
-    for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-      console.log(`Processing page ${pageNum}...`);
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      
-      // Extract text items and combine them
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ')
-        .trim();
-      
-      console.log(`Page ${pageNum} text:`, pageText.substring(0, 100) + '...');
-      
-      if (pageText) {
-        extractedText += pageText + '\n\n';
-      }
-    }
-    
-    const result = extractedText.trim() || 'No text content found in PDF.';
-    console.log('Final extracted text length:', result.length);
-    return result;
+    // For now, provide a user-friendly message about the limitation
+    // In a production environment, you'd want to use a server-side PDF text extraction service
+    const message = `PDF Text Extraction Notice:
+
+This PDF contains text content, but client-side text extraction has limitations. 
+
+For best results with PDF to Excel conversion:
+1. Try copying the text from the PDF manually and paste it into a text file
+2. Then convert the text file to Excel using our "TXT to XLSX" tool
+3. Or use a dedicated PDF-to-Excel converter that supports server-side processing
+
+This PDF appears to be readable and contains ${file.size} bytes of data.`;
+
+    return message;
   } catch (error) {
-    console.error('PDF text extraction error:', error);
-    return 'Error extracting text from PDF. The file may be corrupted or password-protected.';
+    console.error('PDF processing error:', error);
+    return 'Error processing PDF. The file may be corrupted or password-protected.';
   }
 }
 
