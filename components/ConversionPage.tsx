@@ -878,14 +878,41 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           break;
 
         case 'pdf-to-excel':
-          // Extract text from PDF and create a simple CSV (which can be opened in Excel)
+          // Automatically extract text from PDF and convert to Excel
           const pdfTextForExcel = await extractTextFromPDF(files[0]);
-          // Convert text to CSV format (one line per paragraph)
-          const csvLines = pdfTextForExcel.split('\n').filter(line => line.trim());
-          const pdfCsvContent = csvLines.map(line => `"${line.replace(/"/g, '""')}"`).join('\n');
-          // Create a temporary file-like object for csvToXLSX
-          const tempFile = new File([pdfCsvContent], 'temp.csv', { type: 'text/csv' });
-          outputBlob = await csvToXLSX(tempFile);
+          
+          // Check if we got actual text content (not just instructions)
+          if (pdfTextForExcel.includes('PDF Text Extraction Result') || pdfTextForExcel.includes('PDF may contain')) {
+            // If extraction failed, create Excel with the message
+            const csvLines = pdfTextForExcel.split('\n').filter(line => line.trim());
+            const csvContent = csvLines.map(line => `"${line.replace(/"/g, '""')}"`).join('\n');
+            const tempFile = new File([csvContent], 'temp.csv', { type: 'text/csv' });
+            outputBlob = await csvToXLSX(tempFile);
+          } else {
+            // We got actual text content - convert it properly to Excel
+            // Split text into logical sections (paragraphs, sentences)
+            const paragraphs = pdfTextForExcel
+              .split(/\n\s*\n/) // Split by double newlines (paragraphs)
+              .filter(p => p.trim().length > 0)
+              .map(p => p.trim());
+            
+            // Create structured data for Excel
+            const excelData = paragraphs.map((paragraph, index) => ({
+              'Paragraph': index + 1,
+              'Content': paragraph.replace(/\n/g, ' ').trim()
+            }));
+            
+            // Convert to CSV format for Excel
+            const headers = Object.keys(excelData[0]).join(',');
+            const rows = excelData.map(row => 
+              Object.values(row).map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
+            );
+            const csvContent = [headers, ...rows].join('\n');
+            
+            // Create Excel file
+            const tempFile = new File([csvContent], 'temp.csv', { type: 'text/csv' });
+            outputBlob = await csvToXLSX(tempFile);
+          }
           break;
 
         case 'pdf-add-watermark':
