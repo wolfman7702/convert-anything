@@ -368,6 +368,22 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
       // PDF TOOLS
       case 'pdf-to-html':
         return `${baseName}.html`;
+      case 'pdf-to-powerpoint':
+        return `${baseName}.html`;
+      case 'pdf-to-epub':
+        return `${baseName}.html`;
+      case 'pdf-to-mobi':
+        return `${baseName}.html`;
+      case 'pdf-to-azw3':
+        return `${baseName}.html`;
+      case 'pdf-to-fb2':
+        return `${baseName}.html`;
+      case 'pdf-to-csv':
+        return `${baseName}.csv`;
+      case 'pdf-to-rtf':
+        return `${baseName}.rtf`;
+      case 'pdf-to-odt':
+        return `${baseName}.odt`;
       case 'images-to-pdf-single':
         return 'combined.pdf';
       case 'pdf-grayscale':
@@ -1213,6 +1229,66 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           const pdfHtmlContent = await extractTextFromPDF(files[0]);
           const pdfHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PDF Content</title></head><body><pre>${pdfHtmlContent}</pre></body></html>`;
           outputBlob = new Blob([pdfHtml], { type: 'text/html' });
+          break;
+
+        case 'pdf-to-powerpoint':
+          // Extract text from PDF and create a simple PowerPoint-like HTML
+          const pdfPptContent = await extractTextFromPDF(files[0]);
+          const slides = pdfPptContent.split(/\n\s*\n/).filter(s => s.trim().length > 0);
+          let pptHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PDF to PowerPoint</title><style>body{font-family:Arial;margin:20px;}.slide{page-break-after:always;margin-bottom:40px;border:1px solid #ccc;padding:20px;}.slide h1{color:#2c3e50;border-bottom:2px solid #3498db;padding-bottom:10px;}</style></head><body>`;
+          
+          slides.forEach((slide, index) => {
+            pptHtml += `<div class="slide"><h1>Slide ${index + 1}</h1><p>${slide.trim().replace(/\n/g, '<br>')}</p></div>`;
+          });
+          
+          pptHtml += '</body></html>';
+          outputBlob = new Blob([pptHtml], { type: 'text/html' });
+          break;
+
+        case 'pdf-to-epub':
+        case 'pdf-to-mobi':
+        case 'pdf-to-azw3':
+        case 'pdf-to-fb2':
+          // Extract text from PDF and create a simple ebook-like HTML
+          const pdfEbookContent = await extractTextFromPDF(files[0]);
+          const ebookHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PDF to Ebook</title><style>body{font-family:Georgia,serif;line-height:1.6;max-width:800px;margin:0 auto;padding:20px;}h1{color:#2c3e50;border-bottom:2px solid #3498db;padding-bottom:10px;}p{margin-bottom:15px;}</style></head><body><h1>PDF Content</h1><div>${pdfEbookContent.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</div></body></html>`;
+          outputBlob = new Blob([ebookHtml], { type: 'text/html' });
+          break;
+
+        case 'pdf-to-csv':
+          // Extract text from PDF and try to structure it as CSV
+          const pdfCsvContentForCsv = await extractTextFromPDF(files[0]);
+          const lines = pdfCsvContentForCsv.split('\n').filter(line => line.trim().length > 0);
+          
+          // Try to detect table-like structure
+          const csvData = lines.map((line, index) => {
+            // Simple CSV structure: line number, content
+            return `${index + 1},"${line.replace(/"/g, '""')}"`;
+          });
+          
+          const csvContentForPdf = ['Line,Content', ...csvData].join('\n');
+          outputBlob = new Blob([csvContentForPdf], { type: 'text/csv' });
+          break;
+
+        case 'pdf-to-rtf':
+          // Extract text from PDF and create RTF format
+          const pdfRtfContent = await extractTextFromPDF(files[0]);
+          const rtfContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}} \\f0\\fs24 ${pdfRtfContent.replace(/\n/g, '\\par ').replace(/\{/g, '\\{').replace(/\}/g, '\\}')} }`;
+          outputBlob = new Blob([rtfContent], { type: 'application/rtf' });
+          break;
+
+        case 'pdf-to-odt':
+          // Extract text from PDF and create a simple ODT-like structure
+          const pdfOdtContent = await extractTextFromPDF(files[0]);
+          const odtContent = `<?xml version="1.0" encoding="UTF-8"?>
+<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0">
+  <office:body>
+    <office:text>
+      <text:p>${pdfOdtContent.replace(/\n/g, '</text:p><text:p>').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text:p>
+    </office:text>
+  </office:body>
+</office:document>`;
+          outputBlob = new Blob([odtContent], { type: 'application/vnd.oasis.opendocument.text' });
           break;
         case 'images-to-pdf-single':
           outputBlob = await imagesToPDF(files);

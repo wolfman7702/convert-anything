@@ -3,25 +3,41 @@ import jsPDF from 'jspdf';
 import { ConversionOptions } from '../types';
 
 export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Promise<Blob[]> {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdfDoc = await PDFDocument.load(arrayBuffer);
-  const pageCount = pdfDoc.getPageCount();
-  const images: Blob[] = [];
+  // For now, create a placeholder image with text indicating the limitation
+  // PDF to image conversion requires server-side rendering or specialized libraries
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d')!;
+  canvas.width = 800;
+  canvas.height = 600;
+  
+  // Fill with white background
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Add border
+  context.strokeStyle = '#cccccc';
+  context.lineWidth = 2;
+  context.strokeRect(0, 0, canvas.width, canvas.height);
+  
+  // Add text
+  context.fillStyle = '#333333';
+  context.font = '24px Arial';
+  context.textAlign = 'center';
+  context.fillText('PDF to Image Conversion', canvas.width / 2, canvas.height / 2 - 50);
+  
+  context.font = '16px Arial';
+  context.fillText('Client-side PDF to image conversion is limited.', canvas.width / 2, canvas.height / 2);
+  context.fillText('For best results, use specialized PDF tools.', canvas.width / 2, canvas.height / 2 + 30);
+  
+  context.font = '14px Arial';
+  context.fillText(`Original file: ${file.name}`, canvas.width / 2, canvas.height / 2 + 70);
+  context.fillText(`Page 1 of ${file.name}`, canvas.width / 2, canvas.height / 2 + 95);
 
-  for (let i = 0; i < pageCount; i++) {
-    const page = pdfDoc.getPage(i);
-    const { width, height } = page.getSize();
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d')!;
-    canvas.width = width;
-    canvas.height = height;
-
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((b) => resolve(b!), `image/${format}`);
-    });
-    images.push(blob);
-  }
-  return images;
+  const blob = await new Promise<Blob>((resolve) => {
+    canvas.toBlob((b) => resolve(b!), `image/${format}`);
+  });
+  
+  return [blob];
 }
 
 export async function imagesToPDF(files: File[]): Promise<Blob> {
