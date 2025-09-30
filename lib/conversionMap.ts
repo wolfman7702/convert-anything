@@ -276,7 +276,6 @@ export const conversions: ConversionType[] = [
   { id: 'flv-to-avi', name: 'FLV to AVI', from: 'flv', to: 'avi', category: 'video', description: 'Convert FLV to AVI format' },
 
   // DOCUMENT FORMAT EXPANSIONS (10 new)
-  { id: 'pdf-to-txt', name: 'PDF to TXT', from: 'pdf', to: 'txt', category: 'document', description: 'Extract text from PDF (basic extraction, limited accuracy)' },
   { id: 'odt-to-pdf', name: 'ODT to PDF', from: 'odt', to: 'pdf', category: 'document', description: 'Convert OpenDocument to PDF' },
   { id: 'odt-to-docx', name: 'ODT to DOCX', from: 'odt', to: 'docx', category: 'document', description: 'Convert OpenDocument to Word (formatting may be lost)' },
   { id: 'docx-to-odt', name: 'DOCX to ODT', from: 'docx', to: 'odt', category: 'document', description: 'Convert Word to OpenDocument (simplified)' },

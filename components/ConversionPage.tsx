@@ -328,6 +328,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         return `${baseName}.${conversion.to}`;
 
       // DOCUMENT FORMATS
+      case 'pdf-to-text':
       case 'pdf-to-txt':
         return `${baseName}.txt`;
       case 'odt-to-pdf':
@@ -880,39 +881,74 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         case 'pdf-to-excel':
           // Automatically extract text from PDF and convert to Excel
           const pdfTextForExcel = await extractTextFromPDF(files[0]);
+          console.log('Extracted PDF text length:', pdfTextForExcel.length);
+          console.log('First 200 chars:', pdfTextForExcel.substring(0, 200));
           
-          // Check if we got actual text content (not just instructions)
+          // Always create Excel content - either with extracted text or with message
+          let csvContent = '';
+          
           if (pdfTextForExcel.includes('PDF Text Extraction Result') || pdfTextForExcel.includes('PDF may contain')) {
             // If extraction failed, create Excel with the message
+            console.log('Text extraction failed, using fallback message');
             const csvLines = pdfTextForExcel.split('\n').filter(line => line.trim());
-            const csvContent = csvLines.map(line => `"${line.replace(/"/g, '""')}"`).join('\n');
-            const tempFile = new File([csvContent], 'temp.csv', { type: 'text/csv' });
-            outputBlob = await csvToXLSX(tempFile);
+            csvContent = csvLines.map(line => `"${line.replace(/"/g, '""')}"`).join('\n');
           } else {
             // We got actual text content - convert it properly to Excel
+            console.log('Text extraction succeeded, processing content');
+            
             // Split text into logical sections (paragraphs, sentences)
             const paragraphs = pdfTextForExcel
               .split(/\n\s*\n/) // Split by double newlines (paragraphs)
               .filter(p => p.trim().length > 0)
               .map(p => p.trim());
             
-            // Create structured data for Excel
-            const excelData = paragraphs.map((paragraph, index) => ({
-              'Paragraph': index + 1,
-              'Content': paragraph.replace(/\n/g, ' ').trim()
-            }));
+            console.log('Number of paragraphs:', paragraphs.length);
             
-            // Convert to CSV format for Excel
-            const headers = Object.keys(excelData[0]).join(',');
-            const rows = excelData.map(row => 
-              Object.values(row).map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
-            );
-            const csvContent = [headers, ...rows].join('\n');
-            
-            // Create Excel file
-            const tempFile = new File([csvContent], 'temp.csv', { type: 'text/csv' });
-            outputBlob = await csvToXLSX(tempFile);
+            if (paragraphs.length === 0) {
+              // No paragraphs found, try splitting by sentences
+              const sentences = pdfTextForExcel
+                .split(/[.!?]+/)
+                .filter(s => s.trim().length > 10)
+                .map(s => s.trim());
+              
+              console.log('Number of sentences:', sentences.length);
+              
+              if (sentences.length > 0) {
+                const excelData = sentences.map((sentence, index) => ({
+                  'Sentence': index + 1,
+                  'Content': sentence
+                }));
+                
+                const headers = Object.keys(excelData[0]).join(',');
+                const rows = excelData.map(row => 
+                  Object.values(row).map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
+                );
+                csvContent = [headers, ...rows].join('\n');
+              } else {
+                // Even sentences failed, just put the raw text
+                csvContent = `"Content"\n"${pdfTextForExcel.replace(/"/g, '""')}"`;
+              }
+            } else {
+              // We have paragraphs - use them
+              const excelData = paragraphs.map((paragraph, index) => ({
+                'Paragraph': index + 1,
+                'Content': paragraph.replace(/\n/g, ' ').trim()
+              }));
+              
+              const headers = Object.keys(excelData[0]).join(',');
+              const rows = excelData.map(row => 
+                Object.values(row).map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
+              );
+              csvContent = [headers, ...rows].join('\n');
+            }
           }
+          
+          console.log('Final CSV content length:', csvContent.length);
+          console.log('First 300 chars of CSV:', csvContent.substring(0, 300));
+          
+          // Create Excel file
+          const tempFile = new File([csvContent], 'temp.csv', { type: 'text/csv' });
+          outputBlob = await csvToXLSX(tempFile);
           break;
 
         case 'pdf-add-watermark':
@@ -1082,6 +1118,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           break;
 
         // Document conversions
+        case 'pdf-to-text':
         case 'pdf-to-txt':
           const pdfText = await extractTextFromPDF(files[0]);
           outputBlob = new Blob([pdfText], { type: 'text/plain' });
@@ -1282,7 +1319,8 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           break;
 
         default:
-          throw new Error('Conversion not yet implemented');
+          console.log('Unhandled conversion ID:', conversion.id);
+          throw new Error(`Conversion "${conversion.id}" not yet implemented`);
       }
 
       setProgress(100);
