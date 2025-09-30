@@ -193,7 +193,7 @@ export async function removeImageBackground(file: File): Promise<Blob> {
   const { removeBackground } = await import('@imgly/background-removal');
   const blob = await removeBackground(file, {
     progress: (key, current, total) => {
-      console.log(`Processing: ${key}, ${current}/${total}`);
+      // Progress tracking for background removal
     }
   });
   return blob;

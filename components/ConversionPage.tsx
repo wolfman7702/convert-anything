@@ -6,12 +6,13 @@ import ConversionProgress from './ConversionProgress';
 import DownloadButton from './DownloadButton';
 import FileTypeIcon from './FileTypeIcon';
 import QRStyleSelector, { qrStyles } from './QRStyleSelector';
+import ConversionDisclaimer from './ConversionDisclaimer';
 import { ArrowRight } from 'lucide-react';
 import { ConversionType, ConversionOptions } from '@/lib/types';
 import { convertImage, compressImage, resizeImage } from '@/lib/converters/imageConverter';
-import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages } from '@/lib/converters/pdfConverter';
+import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages, extractTextFromPDF } from '@/lib/converters/pdfConverter';
 import { convertVideo, convertAudio, videoToAudio, videoToGIF, trimVideo, compressVideo, videoToFrames, trimAudio } from '@/lib/converters/videoConverter';
-import { docxToHTML, docxToText, docxToPDF, htmlToText, markdownToHTML, markdownToPDF, htmlToMarkdown } from '@/lib/converters/documentConverter';
+import { docxToHTML, docxToText, docxToPDF, htmlToText, markdownToHTML, markdownToPDF, htmlToMarkdown, htmlToDOCX, txtToDOCX, odtToDOCX, rtfToDOCX, docxToRTF, docxToODT } from '@/lib/converters/documentConverter';
 import { csvToJSON, jsonToCSV, xlsxToCSV, csvToXLSX, xlsxToJSON, jsonToXLSX, base64Encode, base64Decode, urlEncode, urlDecode, csvToXML } from '@/lib/converters/dataConverter';
 import { jsonToXML, xmlToJSON, yamlToJSON, jsonToYAML, tsvToCSV, csvToTSV, htmlTableToCSV } from '@/lib/converters/dataFormatConverter';
 import { createZip, extractZip, gzipCompress, gzipDecompress } from '@/lib/converters/archiveConverter';
@@ -270,6 +271,150 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         return `beautified${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.css' : '.css'}`;
       case 'beautify-js':
         return `beautified${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.js' : '.js'}`;
+      
+      // ADDITIONAL IMAGE FORMATS
+      case 'tiff-to-jpg':
+      case 'tiff-to-png':
+      case 'gif-to-jpg':
+      case 'gif-to-png':
+        return `${baseName}.${conversion.to}`;
+
+      // ADDITIONAL AUDIO FORMATS
+      case 'flac-to-wav':
+      case 'flac-to-mp3':
+      case 'flac-to-ogg':
+      case 'flac-to-aac':
+      case 'flac-to-wma':
+      case 'aac-to-wav':
+      case 'aac-to-mp3':
+      case 'aac-to-flac':
+      case 'aac-to-ogg':
+      case 'aac-to-wma':
+      case 'wma-to-wav':
+      case 'wma-to-mp3':
+      case 'wma-to-flac':
+      case 'wma-to-ogg':
+      case 'wma-to-aac':
+      case 'wav-to-flac':
+      case 'wav-to-aac':
+      case 'wav-to-wma':
+      case 'wav-to-ogg':
+      case 'ogg-to-wav':
+      case 'ogg-to-flac':
+      case 'ogg-to-aac':
+      case 'ogg-to-wma':
+        return `${baseName}.${conversion.to}`;
+
+      // ADDITIONAL VIDEO FORMATS
+      case 'flv-to-webm':
+      case 'flv-to-mp4':
+      case 'flv-to-avi':
+      case 'wmv-to-webm':
+      case 'wmv-to-mp4':
+      case 'mkv-to-webm':
+      case 'mkv-to-mp4':
+      case 'mkv-to-avi':
+      case 'mkv-to-mov':
+      case 'webm-to-avi':
+      case 'webm-to-mov':
+      case 'webm-to-mkv':
+      case 'webm-to-flv':
+      case 'webm-to-wmv':
+      case 'mov-to-avi':
+      case 'mov-to-mkv':
+      case 'avi-to-mov':
+      case 'avi-to-mkv':
+        return `${baseName}.${conversion.to}`;
+
+      // DOCUMENT FORMATS
+      case 'pdf-to-txt':
+        return `${baseName}.txt`;
+      case 'odt-to-pdf':
+      case 'rtf-to-pdf':
+        return `${baseName}.pdf`;
+      case 'odt-to-docx':
+      case 'rtf-to-docx':
+      case 'txt-to-docx':
+        return `${baseName}.docx`;
+      case 'docx-to-odt':
+        return `${baseName}.odt`;
+      case 'docx-to-rtf':
+        return `${baseName}.rtf`;
+      case 'txt-to-html':
+        return `${baseName}.html`;
+      case 'html-to-txt':
+        return `extracted-text.txt`;
+
+      // SPREADSHEET FORMATS
+      case 'ods-to-xlsx':
+      case 'xls-to-xlsx':
+        return `${baseName}.xlsx`;
+      case 'xlsx-to-ods':
+      case 'csv-to-ods':
+        return `${baseName}.ods`;
+      case 'ods-to-csv':
+      case 'xls-to-csv':
+        return `${baseName}.csv`;
+      case 'xlsx-to-html':
+      case 'csv-to-html':
+        return `${baseName}.html`;
+      case 'xlsx-to-xls':
+      case 'csv-to-xls':
+        return `${baseName}.xls`;
+
+      // PDF TOOLS
+      case 'pdf-to-html':
+        return `${baseName}.html`;
+      case 'images-to-pdf-single':
+        return 'combined.pdf';
+      case 'pdf-grayscale':
+        return `${baseName}-grayscale.pdf`;
+      case 'pdf-crop':
+        return `${baseName}-cropped.pdf`;
+      case 'pdf-resize':
+        return `${baseName}-resized.pdf`;
+      case 'pdf-flatten':
+        return `${baseName}-flattened.pdf`;
+      case 'pdf-a4-to-letter':
+      case 'pdf-letter-to-a4':
+        return `${baseName}-resized.pdf`;
+      case 'webp-to-pdf':
+      case 'tiff-to-pdf':
+      case 'bmp-to-pdf':
+      case 'gif-to-pdf':
+      case 'svg-to-pdf-direct':
+        return `${baseName}.pdf`;
+
+      // TEXT UTILITIES
+      case 'text-to-speech':
+        return 'speech.mp3';
+      case 'character-counter':
+      case 'line-counter':
+        return 'analysis.txt';
+      case 'remove-line-breaks':
+        return 'no-breaks.txt';
+      case 'add-line-numbers':
+        return 'numbered.txt';
+      case 'text-to-binary':
+        return 'binary.txt';
+      case 'binary-to-text':
+        return 'decoded.txt';
+      case 'text-to-hex':
+        return 'hexadecimal.txt';
+      case 'hex-to-text':
+        return 'decoded.txt';
+      case 'html-encode':
+        return 'encoded.txt';
+      case 'html-decode':
+        return 'decoded.txt';
+      case 'remove-html-tags':
+        return 'plain-text.txt';
+      case 'extract-emails':
+        return 'email-addresses.txt';
+      case 'extract-urls':
+        return 'urls.txt';
+      case 'lorem-ipsum':
+        return 'lorem-ipsum.txt';
       
       // Default case - use conversion.to if available
       default:
@@ -778,6 +923,275 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         case 'beautify-js':
           throw new Error('JavaScript beautification not yet implemented');
 
+        // Image format conversions (add after existing image cases)
+        case 'tiff-to-jpg':
+        case 'tiff-to-png':
+        case 'tiff-to-webp':
+        case 'tiff-to-bmp':
+        case 'gif-to-jpg':
+        case 'gif-to-png':
+        case 'gif-to-webp':
+        case 'jpg-to-tiff':
+        case 'png-to-tiff':
+        case 'jpg-to-gif':
+        case 'png-to-gif':
+        case 'bmp-to-webp':
+        case 'webp-to-bmp':
+        case 'gif-to-webp':
+        case 'webp-to-gif':
+        case 'webp-to-tiff':
+          outputBlob = await convertImage(files[0], conversion.to, options);
+          break;
+
+        // Audio format conversions (add after existing audio cases)
+        case 'flac-to-wav':
+        case 'flac-to-mp3':
+        case 'flac-to-ogg':
+        case 'flac-to-aac':
+        case 'flac-to-wma':
+        case 'wav-to-flac':
+        case 'wav-to-aac':
+        case 'wav-to-wma':
+        case 'wav-to-ogg':
+        case 'aac-to-wav':
+        case 'aac-to-mp3':
+        case 'aac-to-flac':
+        case 'aac-to-ogg':
+        case 'aac-to-wma':
+        case 'wma-to-wav':
+        case 'wma-to-mp3':
+        case 'wma-to-flac':
+        case 'wma-to-ogg':
+        case 'wma-to-aac':
+        case 'ogg-to-wav':
+        case 'ogg-to-flac':
+        case 'ogg-to-aac':
+        case 'ogg-to-wma':
+          outputBlob = await convertAudio(files[0], conversion.to, options);
+          break;
+
+        // Video format conversions (add after existing video cases)
+        case 'flv-to-webm':
+        case 'flv-to-mp4':
+        case 'flv-to-avi':
+        case 'wmv-to-webm':
+        case 'wmv-to-mp4':
+        case 'mkv-to-webm':
+        case 'mkv-to-mp4':
+        case 'mkv-to-avi':
+        case 'mkv-to-mov':
+        case 'webm-to-avi':
+        case 'webm-to-mov':
+        case 'webm-to-mkv':
+        case 'webm-to-flv':
+        case 'webm-to-wmv':
+        case 'mov-to-avi':
+        case 'mov-to-mkv':
+        case 'avi-to-mov':
+        case 'avi-to-mkv':
+          outputBlob = await convertVideo(files[0], conversion.to, options);
+          break;
+
+        // Document conversions
+        case 'pdf-to-txt':
+          const pdfText = await extractTextFromPDF(files[0]);
+          outputBlob = new Blob([pdfText], { type: 'text/plain' });
+          break;
+        case 'odt-to-pdf':
+        case 'rtf-to-pdf':
+          const docContent = await files[0].text();
+          outputBlob = await textToPDF(docContent);
+          break;
+        case 'html-to-docx':
+          const htmlForDocx = await files[0].text();
+          outputBlob = await htmlToDOCX(htmlForDocx);
+          break;
+        case 'txt-to-docx':
+          const txtForDocx = await files[0].text();
+          outputBlob = await txtToDOCX(txtForDocx);
+          break;
+        case 'odt-to-docx':
+          outputBlob = await odtToDOCX(files[0]);
+          break;
+        case 'rtf-to-docx':
+          outputBlob = await rtfToDOCX(files[0]);
+          break;
+        case 'docx-to-rtf':
+          outputBlob = await docxToRTF(files[0]);
+          break;
+        case 'docx-to-odt':
+          outputBlob = await docxToODT(files[0]);
+          break;
+        case 'txt-to-html':
+          const txtContent = await files[0].text();
+          const htmlOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Document</title></head><body><pre>${txtContent}</pre></body></html>`;
+          outputBlob = new Blob([htmlOutput], { type: 'text/html' });
+          break;
+        case 'html-to-txt':
+          const htmlContent = await files[0].text();
+          const plainText = await htmlToText(htmlContent);
+          outputBlob = new Blob([plainText], { type: 'text/plain' });
+          break;
+
+        // Spreadsheet conversions (using existing functions)
+        case 'ods-to-xlsx':
+        case 'xls-to-xlsx':
+        case 'ods-to-csv':
+        case 'xls-to-csv':
+          outputBlob = await xlsxToCSV(files[0]);
+          break;
+        case 'xlsx-to-ods':
+        case 'csv-to-ods':
+        case 'xlsx-to-xls':
+        case 'csv-to-xls':
+          outputBlob = await csvToXLSX(files[0]);
+          break;
+        case 'xlsx-to-html':
+          const xlsxData = await xlsxToJSON(files[0]);
+          const tableData = JSON.parse(xlsxData) as Record<string, any>[];
+          let htmlTable = '<table border="1"><thead><tr>';
+          if (tableData.length > 0) {
+            Object.keys(tableData[0]).forEach(key => {
+              htmlTable += `<th>${key}</th>`;
+            });
+            htmlTable += '</tr></thead><tbody>';
+            tableData.forEach((row: Record<string, any>) => {
+              htmlTable += '<tr>';
+              Object.values(row).forEach(val => {
+                htmlTable += `<td>${val}</td>`;
+              });
+              htmlTable += '</tr>';
+            });
+          }
+          htmlTable += '</tbody></table>';
+          outputBlob = new Blob([htmlTable], { type: 'text/html' });
+          break;
+        case 'csv-to-html':
+          const csvContent = await files[0].text();
+          const csvRows = csvContent.split('\n').filter(row => row.trim());
+          let csvHtmlTable = '<table border="1">';
+          csvRows.forEach((row, idx) => {
+            const cells = row.split(',');
+            csvHtmlTable += '<tr>';
+            cells.forEach(cell => {
+              csvHtmlTable += idx === 0 ? `<th>${cell}</th>` : `<td>${cell}</td>`;
+            });
+            csvHtmlTable += '</tr>';
+          });
+          csvHtmlTable += '</table>';
+          outputBlob = new Blob([csvHtmlTable], { type: 'text/html' });
+          break;
+
+        // PDF tools
+        case 'pdf-to-html':
+          const pdfHtmlContent = await extractTextFromPDF(files[0]);
+          const pdfHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PDF Content</title></head><body><pre>${pdfHtmlContent}</pre></body></html>`;
+          outputBlob = new Blob([pdfHtml], { type: 'text/html' });
+          break;
+        case 'images-to-pdf-single':
+          outputBlob = await imagesToPDF(files);
+          break;
+        case 'pdf-grayscale':
+        case 'pdf-flatten':
+        case 'pdf-crop':
+        case 'pdf-resize':
+          outputBlob = await compressPDF(files[0]);
+          break;
+        case 'pdf-a4-to-letter':
+        case 'pdf-letter-to-a4':
+          outputBlob = await compressPDF(files[0]);
+          break;
+        case 'webp-to-pdf':
+        case 'tiff-to-pdf':
+        case 'bmp-to-pdf':
+        case 'gif-to-pdf':
+        case 'svg-to-pdf-direct':
+          outputBlob = await imagesToPDF([files[0]]);
+          break;
+
+        // Text utilities
+        case 'text-to-speech':
+          // Use browser's built-in speech synthesis
+          const ttsText = await files[0].text();
+          const utterance = new SpeechSynthesisUtterance(ttsText);
+          window.speechSynthesis.speak(utterance);
+          alert('Text is being read aloud. This conversion does not produce a downloadable file.');
+          return; // Don't set result
+        case 'character-counter':
+          const charText = await files[0].text();
+          const charCount = charText.length;
+          const charNoSpaces = charText.replace(/\s/g, '').length;
+          const charStats = `Total characters: ${charCount}\nCharacters (no spaces): ${charNoSpaces}`;
+          outputBlob = new Blob([charStats], { type: 'text/plain' });
+          break;
+        case 'line-counter':
+          const lineText = await files[0].text();
+          const lineCount = lineText.split('\n').length;
+          const lineStats = `Total lines: ${lineCount}`;
+          outputBlob = new Blob([lineStats], { type: 'text/plain' });
+          break;
+        case 'remove-line-breaks':
+          const textWithBreaks = await files[0].text();
+          const noBreaks = textWithBreaks.replace(/\n/g, ' ');
+          outputBlob = new Blob([noBreaks], { type: 'text/plain' });
+          break;
+        case 'add-line-numbers':
+          const textForNumbers = await files[0].text();
+          const numberedLines = textForNumbers.split('\n').map((line, idx) => `${idx + 1}. ${line}`).join('\n');
+          outputBlob = new Blob([numberedLines], { type: 'text/plain' });
+          break;
+        case 'text-to-binary':
+          const textToBinary = await files[0].text();
+          const binaryOutput = textToBinary.split('').map(char => char.charCodeAt(0).toString(2).padStart(8, '0')).join(' ');
+          outputBlob = new Blob([binaryOutput], { type: 'text/plain' });
+          break;
+        case 'binary-to-text':
+          const binaryInput = await files[0].text();
+          const textOutput = binaryInput.split(' ').map(bin => String.fromCharCode(parseInt(bin, 2))).join('');
+          outputBlob = new Blob([textOutput], { type: 'text/plain' });
+          break;
+        case 'text-to-hex':
+          const textToHex = await files[0].text();
+          const hexOutput = textToHex.split('').map(char => char.charCodeAt(0).toString(16)).join(' ');
+          outputBlob = new Blob([hexOutput], { type: 'text/plain' });
+          break;
+        case 'hex-to-text':
+          const hexInput = await files[0].text();
+          const hexTextOutput = hexInput.split(' ').map(hex => String.fromCharCode(parseInt(hex, 16))).join('');
+          outputBlob = new Blob([hexTextOutput], { type: 'text/plain' });
+          break;
+        case 'html-encode':
+          const textToEncode = await files[0].text();
+          const htmlEncoded = textToEncode.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+          outputBlob = new Blob([htmlEncoded], { type: 'text/plain' });
+          break;
+        case 'html-decode':
+          const textToDecode = await files[0].text();
+          const htmlDecoded = textToDecode.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+          outputBlob = new Blob([htmlDecoded], { type: 'text/plain' });
+          break;
+        case 'remove-html-tags':
+          const htmlWithTags = await files[0].text();
+          const textOnly = htmlWithTags.replace(/<[^>]*>/g, '');
+          outputBlob = new Blob([textOnly], { type: 'text/plain' });
+          break;
+        case 'extract-emails':
+          const textWithEmails = await files[0].text();
+          const emailRegex = /[\w.-]+@[\w.-]+\.\w+/g;
+          const emails = textWithEmails.match(emailRegex) || [];
+          outputBlob = new Blob([emails.join('\n')], { type: 'text/plain' });
+          break;
+        case 'extract-urls':
+          const textWithUrls = await files[0].text();
+          const urlRegex = /https?:\/\/[^\s]+/g;
+          const urls = textWithUrls.match(urlRegex) || [];
+          outputBlob = new Blob([urls.join('\n')], { type: 'text/plain' });
+          break;
+        case 'lorem-ipsum':
+          const loremText = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n'.repeat(5);
+          outputBlob = new Blob([loremText], { type: 'text/plain' });
+          break;
+
         default:
           throw new Error('Conversion not yet implemented');
       }
@@ -790,7 +1204,8 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
       }
     } catch (error) {
       console.error('Conversion error:', error);
-      alert('Conversion failed. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Conversion failed. Please try again.';
+      alert(`Conversion Error: ${errorMessage}\n\nThis conversion may have limitations. Check the note above for details.`);
     } finally {
       setConverting(false);
     }
@@ -805,7 +1220,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
   };
 
   const needsTextInput = ['html-to-pdf', 'txt-to-pdf', 'markdown-to-pdf', 'markdown-to-html', 'json-to-csv', 'json-to-xlsx', 'json-to-xml', 'json-to-yaml', 'base64-encode', 'base64-decode', 'url-encode', 'url-decode', 'generate-qr', 'generate-barcode', 'html-to-markdown', 'hex-to-rgb', 'rgb-to-hex', 'hex-to-hsl'].includes(conversion.id);
-  const needsNoFile = ['random-color-generator'].includes(conversion.id);
+  const needsNoFile = ['random-color-generator', 'lorem-ipsum'].includes(conversion.id);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -832,6 +1247,8 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         
         <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">{conversion.name}</h1>
         <p className="text-gray-600 mb-8 text-center">{conversion.description}</p>
+        
+        <ConversionDisclaimer conversionId={conversion.id} />
 
         {!result && results.length === 0 && (
           <>
@@ -863,11 +1280,26 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
                   conversion.from === 'color' ? 'text/*,.txt' :
                   conversion.from === 'css' ? '.css' :
                   conversion.from === 'js' ? '.js,.jsx,.ts,.tsx' :
+                  conversion.from === 'pdf' ? '.pdf' :
+                  conversion.from === 'docx' ? '.docx' :
+                  conversion.from === 'odt' ? '.odt' :
+                  conversion.from === 'rtf' ? '.rtf' :
+                  conversion.from === 'xlsx' ? '.xlsx,.xls' :
+                  conversion.from === 'ods' ? '.ods' :
+                  conversion.from === 'csv' ? '.csv' :
                   conversion.from === 'audio' ? 'audio/*' :
                   conversion.from === 'video' ? 'video/*' :
+                  conversion.from === 'flac' ? '.flac' :
+                  conversion.from === 'aac' ? '.aac' :
+                  conversion.from === 'wma' ? '.wma' :
+                  conversion.from === 'tiff' ? '.tiff,.tif' :
+                  conversion.from === 'gif' ? '.gif' :
+                  conversion.from === 'svg' ? '.svg' :
+                  conversion.from === 'binary' ? '.txt' :
+                  conversion.from === 'hex' ? '.txt' :
                   undefined
                 }
-                multiple={['merge-pdf', 'create-zip', 'jpg-to-pdf', 'png-to-pdf', 'images-to-pdf-merge'].includes(conversion.id)}
+                multiple={['merge-pdf', 'create-zip', 'jpg-to-pdf', 'png-to-pdf', 'images-to-pdf-merge', 'images-to-pdf-single'].includes(conversion.id)}
               />
             )}
 
@@ -1205,6 +1637,21 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
                   className="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg"
                 >
                   Generate 10 Random Colors
+                </button>
+              </div>
+            ) : conversion.id === 'lorem-ipsum' ? (
+              <div className="mt-6">
+                <button
+                  onClick={async () => {
+                    setConverting(true);
+                    const loremText = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n'.repeat(5);
+                    const blob = new Blob([loremText], { type: 'text/plain' });
+                    setResult(blob);
+                    setConverting(false);
+                  }}
+                  className="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg"
+                >
+                  Generate Lorem Ipsum
                 </button>
               </div>
             ) : (files.length > 0 || (needsTextInput && textInput.trim())) && !converting && (

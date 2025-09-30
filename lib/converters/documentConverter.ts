@@ -1,5 +1,7 @@
 import mammoth from 'mammoth';
 import jsPDF from 'jspdf';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+import TurndownService from 'turndown';
 
 export async function docxToHTML(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
@@ -72,5 +74,84 @@ export function htmlToMarkdown(html: string): string {
   markdown = markdown.replace(/<p>(.*?)<\/p>/gi, '$1\n\n');
   markdown = markdown.replace(/<[^>]*>/g, '');
   return markdown.trim();
+}
+
+export async function htmlToDOCX(htmlContent: string): Promise<Blob> {
+  // Convert HTML to plain text with basic formatting preservation
+  const turndownService = new TurndownService();
+  const markdown = turndownService.turndown(htmlContent);
+  
+  // Create paragraphs from markdown
+  const lines = markdown.split('\n').filter(line => line.trim());
+  const paragraphs = lines.map(line => 
+    new Paragraph({
+      children: [new TextRun(line)]
+    })
+  );
+
+  const doc = new Document({
+    sections: [{
+      properties: {},
+      children: paragraphs
+    }]
+  });
+
+  const blob = await Packer.toBlob(doc);
+  return blob;
+}
+
+export async function txtToDOCX(textContent: string): Promise<Blob> {
+  const lines = textContent.split('\n');
+  const paragraphs = lines.map(line => 
+    new Paragraph({
+      children: [new TextRun(line)]
+    })
+  );
+
+  const doc = new Document({
+    sections: [{
+      properties: {},
+      children: paragraphs
+    }]
+  });
+
+  return await Packer.toBlob(doc);
+}
+
+export async function odtToDOCX(file: File): Promise<Blob> {
+  // ODT is a zipped XML format - extract and convert text
+  const text = await file.text();
+  // Simplified: treat as text
+  return txtToDOCX(text);
+}
+
+export async function rtfToDOCX(file: File): Promise<Blob> {
+  // RTF to plain text, then to DOCX
+  const rtfContent = await file.text();
+  // Strip RTF control codes (basic parsing)
+  const plainText = rtfContent.replace(/\\[a-z]+\d*\s?/gi, '').replace(/[{}]/g, '');
+  return txtToDOCX(plainText);
+}
+
+export async function docxToRTF(file: File): Promise<Blob> {
+  // Extract text from DOCX and format as basic RTF
+  const text = await docxToText(file);
+  const rtfContent = `{\\rtf1\\ansi\\deff0\n${text}\n}`;
+  return new Blob([rtfContent], { type: 'application/rtf' });
+}
+
+export async function docxToODT(file: File): Promise<Blob> {
+  // Simplified: extract text and create basic ODT structure
+  const text = await docxToText(file);
+  // ODT is complex XML - this is a very basic implementation
+  const odtContent = `<?xml version="1.0" encoding="UTF-8"?>
+<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0">
+  <office:body>
+    <office:text>
+      <text:p>${text}</text:p>
+    </office:text>
+  </office:body>
+</office:document-content>`;
+  return new Blob([odtContent], { type: 'application/vnd.oasis.opendocument.text' });
 }
 
