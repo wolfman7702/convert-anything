@@ -1,6 +1,10 @@
 import { PDFDocument } from 'pdf-lib';
 import jsPDF from 'jspdf';
+import * as pdfjsLib from 'pdfjs-dist';
 import { ConversionOptions } from '../types';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Promise<Blob[]> {
   const arrayBuffer = await file.arrayBuffer();
@@ -146,23 +150,33 @@ export async function deletePDFPages(file: File, pagesToDelete: number[]): Promi
 
 export async function extractTextFromPDF(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
-  const pdfDoc = await PDFDocument.load(arrayBuffer);
-  const pageCount = pdfDoc.getPageCount();
+  const uint8Array = new Uint8Array(arrayBuffer);
   
-  // Basic text extraction - gets visible text but may miss formatting
-  let extractedText = '';
-  
-  for (let i = 0; i < pageCount; i++) {
-    extractedText += `--- Page ${i + 1} ---\n`;
-    const page = pdfDoc.getPage(i);
-    // Note: pdf-lib doesn't have built-in text extraction
-    // This gets basic structure but not actual text content
-    extractedText += `[Page content - ${page.getSize().width}x${page.getSize().height}]\n`;
-    extractedText += `Text extraction is limited without pdf.js library.\n`;
-    extractedText += `This PDF has ${pageCount} pages.\n\n`;
+  try {
+    const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+    const pageCount = pdf.numPages;
+    let extractedText = '';
+    
+    for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      
+      // Extract text items and combine them
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ')
+        .trim();
+      
+      if (pageText) {
+        extractedText += pageText + '\n\n';
+      }
+    }
+    
+    return extractedText.trim() || 'No text content found in PDF.';
+  } catch (error) {
+    console.error('PDF text extraction error:', error);
+    return 'Error extracting text from PDF. The file may be corrupted or password-protected.';
   }
-  
-  return extractedText;
 }
 
 
