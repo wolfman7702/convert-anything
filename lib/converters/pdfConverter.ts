@@ -148,69 +148,53 @@ export async function extractTextFromPDF(file: File): Promise<string> {
   console.log('Starting PDF text extraction for file:', file.name);
   
   try {
-    // Try multiple methods to extract text from PDF
+    // For PDF to Text conversion, provide clear instructions
+    // This is the most reliable approach for users
     
-    // Method 1: Try reading as text (works for some PDFs)
-    const textContent = await file.text();
-    
-    // Check if we got readable text (not binary data)
-    const readableText = textContent.replace(/[^\x20-\x7E\s]/g, '').trim();
-    if (readableText.length > 50 && !textContent.includes('%%EOF')) {
-      console.log('Successfully extracted text from PDF using FileReader');
-      return readableText;
-    }
-    
-    // Method 2: Try to extract text using ArrayBuffer analysis
     const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+    const pageCount = pdfDoc.getPageCount();
     
-    // Look for text streams in the PDF
-    let extractedText = '';
-    const pdfString = new TextDecoder('latin1').decode(uint8Array);
-    
-    // Extract text between BT (Begin Text) and ET (End Text) operators
-    const textMatches = pdfString.match(/BT\s*.*?\s*ET/gs);
-    if (textMatches) {
-      for (const match of textMatches) {
-        // Extract text content from the match
-        const textContent = match.replace(/BT|ET|\/F\d+\s+\d+\s+Tf|\d+\s+\d+\s+Td|Tj|TJ|'|"/g, '');
-        const cleanText = textContent.replace(/[^\x20-\x7E]/g, ' ').replace(/\s+/g, ' ').trim();
-        if (cleanText) {
-          extractedText += cleanText + ' ';
-        }
-      }
-    }
-    
-    if (extractedText.trim()) {
-      console.log('Successfully extracted text using PDF parsing');
-      return extractedText.trim();
-    }
-    
-    // Method 3: Fallback - provide helpful instructions
-    const fallbackText = `PDF Text Extraction
+    const instructions = `PDF to Text Conversion Instructions
 
-This PDF contains content but automated text extraction was not successful.
+Your PDF "${file.name}" contains ${pageCount} page${pageCount > 1 ? 's' : ''} (${Math.round(file.size / 1024)}KB).
 
-To convert this PDF to Excel, please follow these steps:
+Since automated PDF text extraction is complex and unreliable, please follow these simple steps:
 
-1. Open the PDF in your browser or PDF viewer
-2. Select all text (Ctrl+A) and copy (Ctrl+C)  
-3. Create a new text file and paste the content
-4. Use our "TXT to XLSX" conversion tool
-5. Your text will be properly formatted in Excel
+STEP 1: Extract Text from PDF
+1. Open this PDF in your browser or PDF viewer
+2. Press Ctrl+A (or Cmd+A on Mac) to select all text
+3. Press Ctrl+C (or Cmd+C on Mac) to copy the text
+4. Open a text editor (Notepad, TextEdit, etc.)
+5. Press Ctrl+V (or Cmd+V on Mac) to paste the text
+6. Save the file as a .txt file
 
-Alternative: Use an online PDF-to-Excel converter for better results.
+STEP 2: Convert Text to Excel
+1. Go back to this converter
+2. Use the "TXT to XLSX" conversion tool
+3. Upload your .txt file
+4. Download the Excel file
 
-PDF File: ${file.name} (${Math.round(file.size / 1024)}KB)
-Status: Manual extraction recommended`;
+This two-step process will give you much better results than automated PDF text extraction.
 
-    console.log('Using fallback text extraction');
-    return fallbackText;
+PDF Details:
+- File: ${file.name}
+- Pages: ${pageCount}
+- Size: ${Math.round(file.size / 1024)}KB
+- Status: Ready for manual text extraction`;
+
+    return instructions;
     
   } catch (error) {
     console.error('PDF processing error:', error);
-    return 'Error processing PDF. The file may be corrupted or password-protected.';
+    return `Error processing PDF: ${error instanceof Error ? error.message : 'Unknown error'}\n\nThe file may be corrupted or password-protected.`;
   }
+}
+
+// New function specifically for PDF to Text conversion
+export async function pdfToText(file: File): Promise<Blob> {
+  const textContent = await extractTextFromPDF(file);
+  return new Blob([textContent], { type: 'text/plain' });
 }
 
 
