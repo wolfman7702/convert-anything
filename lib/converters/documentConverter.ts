@@ -16,27 +16,55 @@ export async function docxToText(file: File): Promise<string> {
 }
 
 export async function docxToPDF(file: File): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    docxToHTML(file).then(html => {
-      const doc = new jsPDF();
-      doc.html(html, { 
-        callback: function (doc) {
-          const blob = new Blob([doc.output('blob')], { type: 'application/pdf' });
-          resolve(blob);
-        },
-        x: 10,
-        y: 10,
-        width: 180,
-        windowWidth: 650
-      });
-    }).catch(reject);
-  });
+  // Convert DOCX to text first to avoid HTML formatting issues
+  const text = await docxToText(file);
+  
+  // Clean up the text formatting
+  const cleanText = text
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .replace(/\n\s*\n/g, '\n\n') // Clean up paragraph breaks
+    .replace(/^\s+|\s+$/gm, '') // Trim whitespace from start/end of lines
+    .trim();
+  
+  // Create PDF with proper text formatting
+  const doc = new jsPDF();
+  const lines = doc.splitTextToSize(cleanText, 180);
+  
+  let yPosition = 20;
+  const lineHeight = 7;
+  const pageHeight = doc.internal.pageSize.height;
+  const margin = 20;
+  
+  for (const line of lines) {
+    if (yPosition + lineHeight > pageHeight - margin) {
+      doc.addPage();
+      yPosition = 20;
+    }
+    doc.text(line, 15, yPosition);
+    yPosition += lineHeight;
+  }
+  
+  return new Blob([doc.output('blob')], { type: 'application/pdf' });
 }
 
 export async function textToPDF(text: string): Promise<Blob> {
   const doc = new jsPDF();
   const lines = doc.splitTextToSize(text, 180);
-  doc.text(lines, 10, 10);
+  
+  let yPosition = 20;
+  const lineHeight = 7;
+  const pageHeight = doc.internal.pageSize.height;
+  const margin = 20;
+  
+  for (const line of lines) {
+    if (yPosition + lineHeight > pageHeight - margin) {
+      doc.addPage();
+      yPosition = 20;
+    }
+    doc.text(line, 15, yPosition);
+    yPosition += lineHeight;
+  }
+  
   return new Blob([doc.output('blob')], { type: 'application/pdf' });
 }
 
