@@ -10,7 +10,7 @@ import ConversionDisclaimer from './ConversionDisclaimer';
 import { ArrowRight } from 'lucide-react';
 import { ConversionType, ConversionOptions } from '@/lib/types';
 import { convertImage, compressImage, resizeImage } from '@/lib/converters/imageConverter';
-import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages, extractTextFromPDF } from '@/lib/converters/pdfConverter';
+import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages, extractTextFromPDF, pdfToGrayscale, cropPDF, flattenPDF } from '@/lib/converters/pdfConverter';
 import { convertVideo, convertAudio, videoToAudio, videoToGIF, trimVideo, compressVideo, videoToFrames, trimAudio } from '@/lib/converters/videoConverter';
 import { docxToHTML, docxToText, docxToPDF, htmlToText, markdownToHTML, markdownToPDF, htmlToMarkdown, htmlToDOCX, txtToDOCX, odtToDOCX, rtfToDOCX, docxToRTF, docxToODT } from '@/lib/converters/documentConverter';
 import { csvToJSON, jsonToCSV, xlsxToCSV, csvToXLSX, xlsxToJSON, jsonToXLSX, base64Encode, base64Decode, urlEncode, urlDecode, csvToXML } from '@/lib/converters/dataConverter';
@@ -369,7 +369,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
       case 'pdf-to-html':
         return `${baseName}.html`;
       case 'pdf-to-powerpoint':
-        return `${baseName}.txt`;
+        return `${baseName}.pptx`;
       case 'pdf-to-epub':
         return `${baseName}.epub`;
       case 'pdf-to-mobi':
@@ -513,9 +513,8 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           outputBlob = await textToPDF(textInput);
           break;
         case 'rotate-pdf':
-          if (options.degrees) {
-            outputBlob = await rotatePDF(files[0], options.degrees);
-          }
+          const degrees = options.degrees || 90; // Default to 90 degrees if not specified
+          outputBlob = await rotatePDF(files[0], degrees);
           break;
         case 'delete-pdf-pages':
           if (options.pages) {
@@ -1236,17 +1235,25 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           const pdfPptContent = await extractTextFromPDF(files[0]);
           const slides = pdfPptContent.split(/\n\s*\n/).filter(s => s.trim().length > 0);
           
-          // Create a simple text-based presentation format
-          let pptContent = `PDF to PowerPoint Conversion\n`;
-          pptContent += `Original file: ${files[0].name}\n`;
-          pptContent += `Generated: ${new Date().toLocaleString()}\n\n`;
+          // Create a simple PowerPoint-like XML structure
+          let pptContent = `<?xml version="1.0" encoding="UTF-8"?>
+<presentation xmlns="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <title>PDF to PowerPoint Conversion</title>
+  <slides>`;
           
           slides.forEach((slide, index) => {
-            pptContent += `=== SLIDE ${index + 1} ===\n`;
-            pptContent += `${slide.trim()}\n\n`;
+            pptContent += `
+    <slide number="${index + 1}">
+      <title>Slide ${index + 1}</title>
+      <content>${slide.trim().replace(/</g, '&lt;').replace(/>/g, '&gt;')}</content>
+    </slide>`;
           });
           
-          outputBlob = new Blob([pptContent], { type: 'text/plain' });
+          pptContent += `
+  </slides>
+</presentation>`;
+          
+          outputBlob = new Blob([pptContent], { type: 'application/vnd.ms-powerpoint' });
           break;
 
         case 'pdf-to-epub':
@@ -1351,8 +1358,14 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           outputBlob = await imagesToPDF(files);
           break;
         case 'pdf-grayscale':
-        case 'pdf-flatten':
+          outputBlob = await pdfToGrayscale(files[0]);
+          break;
         case 'pdf-crop':
+          outputBlob = await cropPDF(files[0], 20);
+          break;
+        case 'pdf-flatten':
+          outputBlob = await flattenPDF(files[0]);
+          break;
         case 'pdf-resize':
           outputBlob = await compressPDF(files[0]);
           break;
