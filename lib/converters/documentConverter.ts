@@ -16,10 +16,21 @@ export async function docxToText(file: File): Promise<string> {
 }
 
 export async function docxToPDF(file: File): Promise<Blob> {
-  const html = await docxToHTML(file);
-  const doc = new jsPDF();
-  doc.html(html, { callback: function (doc) {} });
-  return new Blob([doc.output('blob')], { type: 'application/pdf' });
+  return new Promise((resolve, reject) => {
+    docxToHTML(file).then(html => {
+      const doc = new jsPDF();
+      doc.html(html, { 
+        callback: function (doc) {
+          const blob = new Blob([doc.output('blob')], { type: 'application/pdf' });
+          resolve(blob);
+        },
+        x: 10,
+        y: 10,
+        width: 180,
+        windowWidth: 650
+      });
+    }).catch(reject);
+  });
 }
 
 export async function textToPDF(text: string): Promise<Blob> {
@@ -36,9 +47,19 @@ export async function htmlToText(html: string): Promise<string> {
 }
 
 export async function htmlToPDF(html: string): Promise<Blob> {
-  const doc = new jsPDF();
-  doc.html(html, { callback: function (doc) {} });
-  return new Blob([doc.output('blob')], { type: 'application/pdf' });
+  return new Promise((resolve, reject) => {
+    const doc = new jsPDF();
+    doc.html(html, { 
+      callback: function (doc) {
+        const blob = new Blob([doc.output('blob')], { type: 'application/pdf' });
+        resolve(blob);
+      },
+      x: 10,
+      y: 10,
+      width: 180,
+      windowWidth: 650
+    });
+  });
 }
 
 export function markdownToHTML(markdown: string): string {
@@ -56,7 +77,7 @@ export function markdownToHTML(markdown: string): string {
 
 export async function markdownToPDF(markdown: string): Promise<Blob> {
   const html = markdownToHTML(markdown);
-  return htmlToPDF(html);
+  return await htmlToPDF(html);
 }
 
 export function htmlToMarkdown(html: string): string {
