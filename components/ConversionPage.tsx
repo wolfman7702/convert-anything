@@ -335,6 +335,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
       case 'odt-to-docx':
       case 'rtf-to-docx':
       case 'txt-to-docx':
+      case 'html-to-docx':
         return `${baseName}.docx`;
       case 'docx-to-odt':
         return `${baseName}.odt`;
@@ -568,9 +569,6 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           const text = await docxToText(files[0]);
           outputBlob = new Blob([text], { type: 'text/plain' });
           break;
-        case 'html-to-docx':
-          // This would require a more complex implementation
-          throw new Error('HTML to DOCX conversion not yet implemented');
         case 'markdown-to-pdf':
           outputBlob = await markdownToPDF(textInput);
           break;
