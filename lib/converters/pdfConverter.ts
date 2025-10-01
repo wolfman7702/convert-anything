@@ -4,30 +4,44 @@ import { ConversionOptions } from '../types';
 // Removed pdfjs-dist to avoid SSR issues - using simpler implementations
 
 export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Promise<Blob[]> {
-  // Simple implementation - create a placeholder image with instructions
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d')!;
-  canvas.width = 400;
-  canvas.height = 300;
-  
-  // White background
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  // Add text
-  ctx.fillStyle = '#000000';
-  ctx.font = '16px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('PDF to Image Conversion', canvas.width / 2, 100);
-  ctx.fillText('This is a simplified conversion.', canvas.width / 2, 130);
-  ctx.fillText('For full PDF rendering, use a dedicated tool.', canvas.width / 2, 160);
-  ctx.fillText(`Format: ${format.toUpperCase()}`, canvas.width / 2, 190);
-  
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
-      resolve([blob!]);
-    }, `image/${format === 'jpg' ? 'jpeg' : format}`, 0.9);
-  });
+  try {
+    // Dynamic import to avoid SSR issues
+    const pdfjsLib = await import('pdfjs-dist');
+    
+    // Set up the worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+    const images: Blob[] = [];
+
+    // Render each page as an image
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 2.0 });
+
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d')!;
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      // Render the page to canvas
+      await page.render({ canvasContext: context, viewport }).promise;
+
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((b) => resolve(b!), `image/${format === 'jpg' ? 'jpeg' : format}`, 0.95);
+      });
+
+      images.push(blob);
+    }
+
+    return images;
+  } catch (error) {
+    console.error('PDF to images error:', error);
+    throw new Error(`Failed to convert PDF to images: ${error}`);
+  }
 }
 
 export async function imagesToPDF(files: File[]): Promise<Blob> {

@@ -1034,40 +1034,46 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           break;
 
         case 'pdf-to-powerpoint':
-          // Extract text from PDF and create a simple text-based presentation
+          // Extract text from PDF and create a proper presentation structure
           const pdfPptContent = await extractTextFromPDF(files[0]);
-          const slides = pdfPptContent.split(/\n\s*\n/).filter(s => s.trim().length > 0);
           
-          // Create a simple text presentation format that can be opened as a document
-          let pptContent = `PDF TO POWERPOINT CONVERSION
-=====================================
-Original File: ${files[0].name}
+          // Split content into logical slides (by paragraphs or sections)
+          const slides = pdfPptContent
+            .split(/\n\s*\n/)
+            .filter(s => s.trim().length > 20) // Only meaningful content
+            .map(s => s.trim().replace(/\n/g, ' ')); // Clean up formatting
+          
+          // Create a structured presentation format
+          let pptContent = `Presentation: ${files[0].name.replace('.pdf', '')}
 Generated: ${new Date().toLocaleString()}
+Total Slides: ${Math.max(slides.length, 1)}
 
-INSTRUCTIONS:
-This is a text-based presentation extracted from your PDF.
-Each section below represents a slide. You can:
-1. Copy this content into PowerPoint manually
-2. Use it as an outline for creating slides
-3. Import into presentation software
-
-SLIDES:
-====================
-`;
-          
-          slides.forEach((slide, index) => {
-            pptContent += `
-SLIDE ${index + 1}:
-${slide.trim()}
+========================================
 
 `;
-          });
           
-          pptContent += `
-END OF PRESENTATION
-====================
-Total Slides: ${slides.length}
-Note: For best results, copy each slide content into PowerPoint manually.`;
+          if (slides.length === 0) {
+            // If no slides found, create a single slide with the content
+            pptContent += `SLIDE 1: PDF Content
+=====================================
+
+${pdfPptContent.replace(/\n/g, ' ').trim()}
+
+=====================================
+`;
+          } else {
+            // Create multiple slides
+            slides.forEach((slide, index) => {
+              pptContent += `SLIDE ${index + 1}: ${slide.substring(0, 50)}${slide.length > 50 ? '...' : ''}
+=====================================
+
+${slide}
+
+=====================================
+
+`;
+            });
+          }
           
           outputBlob = new Blob([pptContent], { type: 'text/plain' });
           break;
