@@ -1,15 +1,4 @@
-import { Document, Paragraph, TextRun, ImageRun, AlignmentType, Packer, convertInchesToTwip } from 'docx';
-
-// Import pdfjs dynamically only on client side
-let pdfjsLib: any = null;
-
-// Only load PDF.js on the client side
-if (typeof window !== 'undefined') {
-  import('pdfjs-dist').then((module) => {
-    pdfjsLib = module;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-  });
-}
+import { Document, Paragraph, TextRun, AlignmentType, Packer, convertInchesToTwip } from 'docx';
 
 interface ExtractedText {
   text: string;
@@ -19,11 +8,6 @@ interface ExtractedText {
   isItalic: boolean;
 }
 
-interface ExtractedImage {
-  data: ArrayBuffer;
-  width: number;
-  height: number;
-}
 
 export async function pdfToWord(file: File): Promise<Blob> {
   // Ensure we're on the client side
@@ -31,42 +15,25 @@ export async function pdfToWord(file: File): Promise<Blob> {
     throw new Error('PDF to Word conversion can only run in the browser');
   }
 
-  // Wait for PDF.js to load
-  if (!pdfjsLib) {
-    const module = await import('pdfjs-dist');
-    pdfjsLib = module;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-  }
-
   try {
+    // Try advanced PDF.js conversion first
+    const pdfjsLib = await import('pdfjs-dist');
+    
+    // Set up worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
     const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const loadingTask = pdfjsLib.getDocument({ 
+      data: arrayBuffer,
+      disableFontFace: true,
+      disableCreateObjectURL: true
+    });
     const pdf = await loadingTask.promise;
     
     const allParagraphs: Paragraph[] = [];
     
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
-      
-      // Extract images
-      const images = await extractImages(page, pdfjsLib);
-      
-      // Add images to document
-      for (const img of images) {
-        allParagraphs.push(new Paragraph({
-          children: [
-            new ImageRun({
-              data: img.data,
-              transformation: {
-                width: Math.min(img.width, 600),
-                height: Math.min(img.height, 800),
-              },
-            }),
-          ],
-          spacing: { after: 200, before: 200 },
-          alignment: AlignmentType.CENTER,
-        }));
-      }
       
       // Extract text
       const textContent = await page.getTextContent();
@@ -192,70 +159,86 @@ export async function pdfToWord(file: File): Promise<Blob> {
     return await Packer.toBlob(doc);
     
   } catch (error) {
-    console.error('PDF to Word error:', error);
-    throw new Error('Failed to convert PDF to Word');
+    console.error('PDF to Word advanced conversion failed, using fallback:', error);
+    
+    // Fallback to simple text extraction
+    return await createSimpleWordDocument(file);
   }
 }
 
-async function extractImages(page: any, pdfjs: any): Promise<ExtractedImage[]> {
-  const images: ExtractedImage[] = [];
-  
+async function createSimpleWordDocument(file: File): Promise<Blob> {
   try {
-    const ops = await page.getOperatorList();
+    // Use the existing extractTextFromPDF function from pdfConverter
+    const { extractTextFromPDF } = await import('./pdfConverter');
+    const textContent = await extractTextFromPDF(file);
     
-    for (let i = 0; i < ops.fnArray.length; i++) {
-      if (ops.fnArray[i] === pdfjs.OPS.paintImageXObject || 
-          ops.fnArray[i] === pdfjs.OPS.paintJpegXObject) {
-        
-        try {
-          const imageName = ops.argsArray[i][0];
-          await page.objs.ensure(imageName);
-          const image = page.objs.get(imageName);
-          
-          if (image && image.data) {
-            const canvas = document.createElement('canvas');
-            canvas.width = image.width;
-            canvas.height = image.height;
-            const ctx = canvas.getContext('2d');
-            
-            if (ctx) {
-              const imageData = ctx.createImageData(image.width, image.height);
-              
-              if (image.kind === 1) {
-                for (let j = 0; j < image.data.length; j++) {
-                  const idx = j * 4;
-                  imageData.data[idx] = image.data[j];
-                  imageData.data[idx + 1] = image.data[j];
-                  imageData.data[idx + 2] = image.data[j];
-                  imageData.data[idx + 3] = 255;
-                }
-              } else {
-                imageData.data.set(image.data);
-              }
-              
-              ctx.putImageData(imageData, 0, 0);
-              
-              const blob = await new Promise<Blob>((resolve) => {
-                canvas.toBlob((b) => resolve(b!), 'image/png', 1.0);
-              });
-              
-              const arrayBuffer = await blob.arrayBuffer();
-              
-              images.push({
-                data: arrayBuffer,
-                width: image.width,
-                height: image.height,
-              });
-            }
-          }
-        } catch (err) {
-          console.warn('Failed to extract image:', err);
-        }
+    const cleanText = textContent
+      .replace(/\bo\s+/g, '• ')  // Convert "o" to proper bullets
+      .replace(/\s+-\s+/g, '-')
+      .replace(/\s+/g, ' ')
+      .replace(/\s+\.\s+/g, '. ')
+      .replace(/\s+!\s+/g, '! ')
+      .trim();
+
+    const lines = cleanText.split('\n').filter(line => line.trim().length > 0);
+    const paragraphs = lines.map(line => {
+      const text = line.trim();
+      let isBold = false;
+      let fontSize = 22;
+      let indent = undefined;
+      
+      // Detect bullet points
+      const isBullet = text.startsWith('•') || text.startsWith('-') || text.startsWith('*');
+      
+      // Make headers bold
+      if (text.match(/^[A-Z][A-Z\s]+$/) || 
+          text.match(/^[A-Z][a-z]+:$/) ||
+          text.match(/^\d+\.\s/) ||
+          text.includes('Small Group Discussion:')) {
+        isBold = true;
+        fontSize = 24;
       }
-    }
-  } catch (err) {
-    console.warn('Error extracting images:', err);
+      
+      // Set indentation for bullets
+      if (isBullet) {
+        indent = {
+          left: convertInchesToTwip(0.5),
+          hanging: convertInchesToTwip(0.25),
+        };
+      }
+      
+      return new Paragraph({
+        children: [new TextRun({
+          text: text,
+          bold: isBold,
+          size: fontSize,
+          font: 'Calibri',
+        })],
+        spacing: { after: 200 },
+        indent: indent,
+      });
+    });
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            margin: {
+              top: convertInchesToTwip(1),
+              right: convertInchesToTwip(1),
+              bottom: convertInchesToTwip(1),
+              left: convertInchesToTwip(1),
+            },
+          },
+        },
+        children: paragraphs
+      }]
+    });
+
+    return await Packer.toBlob(doc);
+  } catch (fallbackError) {
+    console.error('Fallback conversion also failed:', fallbackError);
+    throw new Error('PDF to Word conversion failed. Please try a simpler PDF or use a different conversion method.');
   }
-  
-  return images;
 }
+
