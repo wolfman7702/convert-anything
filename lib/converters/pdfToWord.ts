@@ -1,4 +1,5 @@
 import { Document, Paragraph, TextRun, AlignmentType, Packer, convertInchesToTwip } from 'docx';
+import { initializePDFJS } from '@/lib/config/pdfConfig';
 
 interface ExtractedText {
   text: string;
@@ -16,11 +17,8 @@ export async function pdfToWord(file: File): Promise<Blob> {
   }
 
   try {
-    // Try advanced PDF.js conversion first
-    const pdfjsLib = await import('pdfjs-dist');
-    
-    // Set up worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    // Use centralized PDF.js initialization
+    const pdfjsLib = await initializePDFJS();
 
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = pdfjsLib.getDocument({ 

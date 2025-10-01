@@ -1,17 +1,12 @@
 import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
 import jsPDF from 'jspdf';
 import { ConversionOptions } from '../types';
-// Removed pdfjs-dist to avoid SSR issues - using simpler implementations
+import { initializePDFJS } from '@/lib/config/pdfConfig';
 
 export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Promise<Blob[]> {
   try {
-    // Dynamic import to avoid SSR issues
-    const pdfjsLib = await import('pdfjs-dist');
-    
-        // Set up the worker - use CDN for Vercel compatibility
-        if (typeof window !== 'undefined') {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-        }
+    // Use centralized PDF.js initialization
+    const pdfjsLib = await initializePDFJS();
     
   const arrayBuffer = await file.arrayBuffer();
     
@@ -236,13 +231,8 @@ export async function flattenPDF(file: File): Promise<Blob> {
 
 export async function extractTextFromPDF(file: File): Promise<string> {
   try {
-    // Dynamic import to avoid SSR issues
-    const pdfjsLib = await import('pdfjs-dist');
-    
-        // Set up the worker - use CDN for Vercel compatibility
-        if (typeof window !== 'undefined') {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-        }
+    // Use centralized PDF.js initialization
+    const pdfjsLib = await initializePDFJS();
     
     const arrayBuffer = await file.arrayBuffer();
     
