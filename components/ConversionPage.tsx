@@ -11,7 +11,8 @@ import FilePreview from './FilePreview';
 import { ArrowRight } from 'lucide-react';
 import { ConversionType, ConversionOptions } from '@/lib/types';
 import { convertImage, compressImage, resizeImage } from '@/lib/converters/imageConverter';
-import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages, extractTextFromPDF, pdfToGrayscale, cropPDF, flattenPDF, addWatermarkToPDF, pdfToWord } from '@/lib/converters/pdfConverter';
+import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages, extractTextFromPDF, pdfToGrayscale, cropPDF, flattenPDF, addWatermarkToPDF } from '@/lib/converters/pdfConverter';
+import { pdfToWord } from '@/lib/converters/pdfToWord';
 import { PDFDocument } from 'pdf-lib';
 // Removed video/audio converters - not supported in browser
 import { docxToHTML, docxToText, docxToPDF, htmlToText, markdownToHTML, markdownToPDF, htmlToMarkdown, htmlToDOCX, txtToDOCX, odtToDOCX, rtfToDOCX, docxToRTF, docxToODT } from '@/lib/converters/documentConverter';
