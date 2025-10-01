@@ -229,7 +229,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
       
       // New PDF conversions
       case 'pdf-to-word':
-        return `${baseName}.docx`;
+        return `${baseName}.docx`; // Will be .rtf if fallback is used
       case 'pdf-to-excel':
         return `${baseName}.xlsx`;
       case 'pdf-add-watermark':

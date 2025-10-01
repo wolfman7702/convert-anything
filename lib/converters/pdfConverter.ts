@@ -391,90 +391,55 @@ export async function pdfToText(file: File): Promise<Blob> {
 // Professional PDF to Word conversion that creates editable Word documents
 export async function pdfToWord(file: File): Promise<Blob> {
   try {
+    // Get clean text from PDF first
+    const textContent = await extractTextFromPDF(file);
+    
+    // Clean up the text
+    const cleanText = textContent
+      .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
+      .replace(/\s+-\s+/g, '-')
+      .replace(/\s+/g, ' ')
+      .replace(/\s+\.\s+/g, '. ')
+      .replace(/\s+!\s+/g, '! ')
+      .trim();
+
+    // Split into lines and create properly formatted paragraphs
+    const lines = cleanText.split('\n').filter(line => line.trim().length > 0);
+    
     // Dynamic import to avoid SSR issues
-    const pdfjsLib = await import('pdfjs-dist');
-    const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType } = await import('docx');
-
-    // Set up the worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
-
-    const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({
-      data: arrayBuffer,
-      disableFontFace: true,
+    const { Document, Packer, Paragraph, TextRun } = await import('docx');
+    
+    const paragraphs = lines.map(line => {
+      const text = line.trim();
+      let isBold = false;
+      let fontSize = 22;
+      
+      // Make headers bold with larger font
+      if (text.match(/^[A-Z][A-Z\s]+$/) || 
+          text.match(/^[A-Z][a-z]+:$/) ||
+          text.match(/^\d+\.\s/) ||
+          text.includes('Small Group Discussion:')) {
+        isBold = true;
+        fontSize = 24;
+      }
+      
+      // Section headers get even larger
+      if (text.match(/^[A-Z][a-z]+\s+[A-Z][a-z]+:/)) {
+        isBold = true;
+        fontSize = 28;
+      }
+      
+      return new Paragraph({
+        children: [new TextRun({
+          text: text,
+          bold: isBold,
+          size: fontSize
+        })],
+        spacing: { after: 200 }
+      });
     });
 
-    const pdf = await loadingTask.promise;
-    const paragraphs: any[] = [];
-
-    // Process each page
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 1.0 });
-
-      // Get text content with positioning information
-      const textContent = await page.getTextContent();
-      
-      // Extract images from the page
-      const images = await extractImagesFromPage(page, viewport);
-      
-      // Sort text items by position (top to bottom, left to right)
-      const sortedTextItems = textContent.items
-        .filter((item: any) => item.str && item.str.trim())
-        .sort((a: any, b: any) => {
-          // Sort by Y position (top to bottom)
-          const aY = a.transform ? a.transform[5] : 0;
-          const bY = b.transform ? b.transform[5] : 0;
-          if (Math.abs(aY - bY) > 5) {
-            return bY - aY; // Higher Y values first (top of page)
-          }
-          // If same Y, sort by X position (left to right)
-          const aX = a.transform ? a.transform[4] : 0;
-          const bX = b.transform ? b.transform[4] : 0;
-          return aX - bX;
-        });
-
-      // Add images first (they're typically at the top)
-      for (const image of images) {
-        paragraphs.push(new Paragraph({
-          children: [new ImageRun({
-            data: image.data,
-            transformation: {
-              width: image.width,
-              height: image.height,
-            },
-          })],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 300 }
-        }));
-      }
-
-      // Process text items and maintain formatting
-      let currentLine: any[] = [];
-      let lastY = -1;
-
-      for (const item of sortedTextItems) {
-        const currentY = item.transform ? item.transform[5] : 0;
-        
-        // If Y position changed significantly, start a new line
-        if (lastY !== -1 && Math.abs(currentY - lastY) > 10) {
-          if (currentLine.length > 0) {
-            paragraphs.push(createEditableParagraphFromTextItems(currentLine));
-            currentLine = [];
-          }
-        }
-
-        currentLine.push(item);
-        lastY = currentY;
-      }
-
-      // Add the last line
-      if (currentLine.length > 0) {
-        paragraphs.push(createEditableParagraphFromTextItems(currentLine));
-      }
-    }
-
-    // Create Word document with editable content
+    // Create a simple, reliable Word document
     const doc = new Document({
       sections: [{
         properties: {},
@@ -486,48 +451,35 @@ export async function pdfToWord(file: File): Promise<Blob> {
   } catch (error) {
     console.error('PDF to Word error:', error);
     
-    // Fallback to simple text conversion
+    // Ultimate fallback - create RTF file
     const textContent = await extractTextFromPDF(file);
-    const { Document, Packer, Paragraph, TextRun } = await import('docx');
-    
     const cleanText = textContent
-      .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
+      .replace(/\bo\s+/g, '')
       .replace(/\s+-\s+/g, '-')
       .replace(/\s+/g, ' ')
       .replace(/\s+\.\s+/g, '. ')
       .replace(/\s+!\s+/g, '! ')
       .trim();
-
-    const lines = cleanText.split('\n').filter(line => line.trim().length > 0);
-    const paragraphs = lines.map(line => {
-      const text = line.trim();
-      let isBold = false;
-      
-      // Make headers bold
-      if (text.match(/^[A-Z][A-Z\s]+$/) || 
-          text.match(/^[A-Z][a-z]+:$/) ||
-          text.match(/^\d+\.\s/) ||
-          text.includes('Small Group Discussion:')) {
-        isBold = true;
-      }
-      
-      return new Paragraph({
-        children: [new TextRun({
-          text: text,
-          bold: isBold,
-          size: 24
-        })]
-      });
-    });
-
-    const doc = new Document({
-      sections: [{
-        properties: {},
-        children: paragraphs
-      }]
-    });
-
-    return await Packer.toBlob(doc);
+    
+    // Create a simple RTF file that Word can definitely open
+    const rtfContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}}
+${cleanText.split('\n').map(line => {
+  const text = line.trim();
+  let isBold = false;
+  
+  // Make headers bold
+  if (text.match(/^[A-Z][A-Z\s]+$/) || 
+      text.match(/^[A-Z][a-z]+:$/) ||
+      text.match(/^\d+\.\s/) ||
+      text.includes('Small Group Discussion:')) {
+    isBold = true;
+  }
+  
+  return isBold ? `{\\b ${text}}\\par` : `${text}\\par`;
+}).join('\n')}
+}`;
+    
+    return new Blob([rtfContent], { type: 'application/rtf' });
   }
 }
 
