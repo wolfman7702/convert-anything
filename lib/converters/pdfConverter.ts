@@ -274,22 +274,29 @@ export async function extractTextFromPDF(file: File): Promise<string> {
         })
         .filter(text => text.trim().length > 0)
         .reduce((acc, text, index, array) => {
-          // Add spaces between words, but preserve line breaks
-          if (index === 0) return text;
+          // Clean up fake bullet points and formatting issues
+          let cleanText = text
+            .replace(/\bo\s/g, '• ')  // Replace standalone "o " with proper bullet
+            .replace(/\s+-\s+/g, '-')  // Fix spacing around dashes
+            .replace(/\s+/g, ' ')      // Normalize multiple spaces
+            .trim();
+          
+          if (index === 0) return cleanText;
           
           // Check if this looks like a new line (bullet points, numbers, etc.)
           const prevText = array[index - 1];
-          const isNewLine = text.match(/^[•\-\*]\s/) || 
-                           text.match(/^\d+\.\s/) || 
-                           text.match(/^[A-Z][a-z]+:/) ||
-                           (prevText && prevText.endsWith(':') && text.trim().length > 0);
+          const isNewLine = cleanText.match(/^[•\-\*]\s/) || 
+                           cleanText.match(/^\d+\.\s/) || 
+                           cleanText.match(/^[A-Z][a-z]+:/) ||
+                           cleanText.match(/^[A-Z][A-Z\s]+:$/) || // All caps headers
+                           (prevText && prevText.endsWith(':') && cleanText.trim().length > 0);
           
           if (isNewLine) {
-            return acc + '\n' + text;
+            return acc + '\n\n' + cleanText;  // Add extra line break for better spacing
           }
           
           // Add space between regular text
-          return acc + ' ' + text;
+          return acc + ' ' + cleanText;
         }, '');
       
       if (pageText.trim()) {

@@ -150,12 +150,70 @@ export async function htmlToDOCX(htmlContent: string): Promise<Blob> {
 }
 
 export async function txtToDOCX(textContent: string): Promise<Blob> {
-  const lines = textContent.split('\n');
-  const paragraphs = lines.map(line => 
-    new Paragraph({
-      children: [new TextRun(line)]
-    })
-  );
+  const lines = textContent.split('\n').filter(line => line.trim().length > 0);
+  const paragraphs: Paragraph[] = [];
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    
+    // Skip page markers
+    if (trimmedLine.startsWith('--- Page')) {
+      continue;
+    }
+    
+    // Handle different types of content
+    if (trimmedLine.match(/^\d+\.\s/)) {
+      // Numbered lists
+      paragraphs.push(new Paragraph({
+        children: [new TextRun({
+          text: trimmedLine,
+          bold: true,
+          size: 24
+        })],
+        spacing: { after: 200 }
+      }));
+    } else if (trimmedLine.match(/^[•]\s/)) {
+      // Bullet points
+      paragraphs.push(new Paragraph({
+        children: [new TextRun({
+          text: trimmedLine,
+          size: 22
+        })],
+        spacing: { after: 100 },
+        indent: { left: 720 } // 0.5 inch indent
+      }));
+    } else if (trimmedLine.match(/^[A-Z][A-Z\s]+:$/) || trimmedLine.match(/^[A-Z][a-z]+:$/)) {
+      // Headers (ending with colon)
+      paragraphs.push(new Paragraph({
+        children: [new TextRun({
+          text: trimmedLine,
+          bold: true,
+          size: 28
+        })],
+        spacing: { before: 400, after: 200 }
+      }));
+    } else if (trimmedLine.includes('Small Group Discussion:')) {
+      // Discussion sections
+      paragraphs.push(new Paragraph({
+        children: [new TextRun({
+          text: trimmedLine,
+          bold: true,
+          color: "0066CC",
+          size: 24
+        })],
+        spacing: { before: 300, after: 150 }
+      }));
+    } else if (trimmedLine.length > 0) {
+      // Regular paragraphs
+      paragraphs.push(new Paragraph({
+        children: [new TextRun({
+          text: trimmedLine,
+          size: 22
+        })],
+        spacing: { after: 150 }
+      }));
+    }
+  }
 
   const doc = new Document({
     sections: [{
