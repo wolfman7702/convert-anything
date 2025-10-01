@@ -388,74 +388,49 @@ export async function pdfToText(file: File): Promise<Blob> {
   return new Blob([textContent], { type: 'text/plain' });
 }
 
-// Professional PDF to Word conversion that preserves all formatting, images, and layout
+// Simple and reliable PDF to Word conversion
 export async function pdfToWord(file: File): Promise<Blob> {
   try {
+    // Get clean text from PDF
+    const textContent = await extractTextFromPDF(file);
+    
+    // Clean up the text
+    const cleanText = textContent
+      .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
+      .replace(/\s+-\s+/g, '-')
+      .replace(/\s+/g, ' ')
+      .replace(/\s+\.\s+/g, '. ')
+      .replace(/\s+!\s+/g, '! ')
+      .trim();
+
+    // Split into lines and create simple paragraphs
+    const lines = cleanText.split('\n').filter(line => line.trim().length > 0);
+    
     // Dynamic import to avoid SSR issues
-    const pdfjsLib = await import('pdfjs-dist');
     const { Document, Packer, Paragraph, TextRun } = await import('docx');
-
-    // Set up the worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
-
-    const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({
-      data: arrayBuffer,
-      disableFontFace: true,
+    
+    const paragraphs = lines.map(line => {
+      const text = line.trim();
+      let isBold = false;
+      
+      // Make headers bold
+      if (text.match(/^[A-Z][A-Z\s]+$/) || 
+          text.match(/^[A-Z][a-z]+:$/) ||
+          text.match(/^\d+\.\s/) ||
+          text.includes('Small Group Discussion:')) {
+        isBold = true;
+      }
+      
+      return new Paragraph({
+        children: [new TextRun({
+          text: text,
+          bold: isBold,
+          size: 24
+        })]
+      });
     });
 
-    const pdf = await loadingTask.promise;
-    const paragraphs: any[] = [];
-
-    // Process each page
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      
-      // Get text content with positioning information
-      const textContent = await page.getTextContent();
-      
-      // Sort text items by position (top to bottom, left to right)
-      const sortedTextItems = textContent.items
-        .filter((item: any) => item.str && item.str.trim())
-        .sort((a: any, b: any) => {
-          // Sort by Y position (top to bottom)
-          const aY = a.transform ? a.transform[5] : 0;
-          const bY = b.transform ? b.transform[5] : 0;
-          if (Math.abs(aY - bY) > 5) {
-            return bY - aY; // Higher Y values first (top of page)
-          }
-          // If same Y, sort by X position (left to right)
-          const aX = a.transform ? a.transform[4] : 0;
-          const bX = b.transform ? b.transform[4] : 0;
-          return aX - bX;
-        });
-
-      // Process text items and maintain formatting
-      let currentLine: any[] = [];
-      let lastY = -1;
-
-      for (const item of sortedTextItems) {
-        const currentY = item.transform ? item.transform[5] : 0;
-        
-        // If Y position changed significantly, start a new line
-        if (lastY !== -1 && Math.abs(currentY - lastY) > 10) {
-          if (currentLine.length > 0) {
-            paragraphs.push(createParagraphFromTextItems(currentLine));
-            currentLine = [];
-          }
-        }
-
-        currentLine.push(item);
-        lastY = currentY;
-      }
-
-      // Add the last line
-      if (currentLine.length > 0) {
-        paragraphs.push(createParagraphFromTextItems(currentLine));
-      }
-    }
-
-    // Create a simple, reliable Word document
+    // Create the simplest possible Word document
     const doc = new Document({
       sections: [{
         properties: {},
@@ -467,37 +442,22 @@ export async function pdfToWord(file: File): Promise<Blob> {
   } catch (error) {
     console.error('PDF to Word error:', error);
     
-    // Fallback to simple text conversion
+    // Ultimate fallback - create a basic text file
     const textContent = await extractTextFromPDF(file);
-    const { Document, Packer, Paragraph, TextRun } = await import('docx');
-    
     const cleanText = textContent
-      .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
+      .replace(/\bo\s+/g, '')
       .replace(/\s+-\s+/g, '-')
       .replace(/\s+/g, ' ')
       .replace(/\s+\.\s+/g, '. ')
       .replace(/\s+!\s+/g, '! ')
       .trim();
-
-    const lines = cleanText.split('\n').filter(line => line.trim().length > 0);
-    const paragraphs = lines.map(line => 
-      new Paragraph({
-        children: [new TextRun({
-          text: line.trim(),
-          size: 22
-        })],
-        spacing: { after: 200 }
-      })
-    );
-
-    const doc = new Document({
-      sections: [{
-        properties: {},
-        children: paragraphs
-      }]
-    });
-
-    return await Packer.toBlob(doc);
+    
+    // Create a simple RTF file instead
+    const rtfContent = `{\\rtf1\\ansi\\deff0
+${cleanText.split('\n').map(line => `{\\b ${line.trim()}}\\par`).join('\n')}
+}`;
+    
+    return new Blob([rtfContent], { type: 'application/rtf' });
   }
 }
 
