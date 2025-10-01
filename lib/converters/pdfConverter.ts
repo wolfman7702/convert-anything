@@ -393,7 +393,7 @@ export async function pdfToWord(file: File): Promise<Blob> {
   try {
     // Dynamic import to avoid SSR issues
     const pdfjsLib = await import('pdfjs-dist');
-    const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, HeadingLevel } = await import('docx');
+    const { Document, Packer, Paragraph, TextRun } = await import('docx');
 
     // Set up the worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
@@ -410,13 +410,9 @@ export async function pdfToWord(file: File): Promise<Blob> {
     // Process each page
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 1.0 });
-
+      
       // Get text content with positioning information
       const textContent = await page.getTextContent();
-      
-      // Extract images from the page
-      const images = await extractImagesFromPage(page, viewport);
       
       // Sort text items by position (top to bottom, left to right)
       const sortedTextItems = textContent.items
@@ -433,21 +429,6 @@ export async function pdfToWord(file: File): Promise<Blob> {
           const bX = b.transform ? b.transform[4] : 0;
           return aX - bX;
         });
-
-      // Add images first (they're typically at the top)
-      for (const image of images) {
-        paragraphs.push(new Paragraph({
-          children: [new ImageRun({
-            data: image.data,
-            transformation: {
-              width: image.width,
-              height: image.height,
-            },
-          })],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 300 }
-        }));
-      }
 
       // Process text items and maintain formatting
       let currentLine: any[] = [];
@@ -474,6 +455,7 @@ export async function pdfToWord(file: File): Promise<Blob> {
       }
     }
 
+    // Create a simple, reliable Word document
     const doc = new Document({
       sections: [{
         properties: {},
@@ -485,7 +467,7 @@ export async function pdfToWord(file: File): Promise<Blob> {
   } catch (error) {
     console.error('PDF to Word error:', error);
     
-    // Fallback to clean text conversion
+    // Fallback to simple text conversion
     const textContent = await extractTextFromPDF(file);
     const { Document, Packer, Paragraph, TextRun } = await import('docx');
     
@@ -502,9 +484,9 @@ export async function pdfToWord(file: File): Promise<Blob> {
       new Paragraph({
         children: [new TextRun({
           text: line.trim(),
-          size: 20
+          size: 22
         })],
-        spacing: { after: 150 }
+        spacing: { after: 200 }
       })
     );
 
@@ -540,7 +522,7 @@ async function extractImagesFromPage(page: any, viewport: any): Promise<any[]> {
 
 // Helper function to create a paragraph from text items with proper formatting
 function createParagraphFromTextItems(textItems: any[]): any {
-  const { Paragraph, TextRun, AlignmentType } = require('docx');
+  const { Paragraph, TextRun } = require('docx');
   
   const textRuns: any[] = [];
   
@@ -558,8 +540,7 @@ function createParagraphFromTextItems(textItems: any[]): any {
     
     // Determine formatting based on content
     let isBold = false;
-    let fontSize = 20;
-    let color = "000000";
+    let fontSize = 22; // Standard font size
     
     // Check for headers (all caps or title case)
     if (text.match(/^[A-Z][A-Z\s]+$/) || text.match(/^[A-Z][a-z]+:$/)) {
@@ -570,38 +551,31 @@ function createParagraphFromTextItems(textItems: any[]): any {
     // Check for numbered lists
     if (text.match(/^\d+\.\s/)) {
       isBold = true;
-      fontSize = 22;
-    }
-    
-    // Check for bullet points
-    if (text.match(/^[•]\s/)) {
-      fontSize = 20;
+      fontSize = 24;
     }
     
     // Check for discussion sections
     if (text.includes('Small Group Discussion:')) {
       isBold = true;
-      color = "0066CC";
-      fontSize = 22;
+      fontSize = 24;
     }
     
     // Check for section headers
     if (text.match(/^[A-Z][a-z]+\s+[A-Z][a-z]+:/)) {
       isBold = true;
-      fontSize = 26;
+      fontSize = 28;
     }
     
     textRuns.push(new TextRun({
       text: text + ' ',
       bold: isBold,
-      size: fontSize,
-      color: color
+      size: fontSize
     }));
   }
   
   return new Paragraph({
     children: textRuns,
-    spacing: { after: 200 }
+    spacing: { after: 300 }
   });
 }
 
