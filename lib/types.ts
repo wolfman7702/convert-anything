@@ -3,7 +3,7 @@ export interface ConversionType {
   name: string;
   from: string;
   to: string;
-  category: 'image' | 'pdf' | 'video' | 'audio' | 'document' | 'data' | 'archive' | 'utility';
+  category: 'image' | 'pdf' | 'document' | 'data' | 'archive' | 'utility';
   description: string;
   popular?: boolean;
 }
@@ -37,9 +37,7 @@ export interface ConversionOptions {
   compressionLevel?: string;
   watermarkText?: string;
   password?: string;
-  // Audio options
-  fadeInDuration?: number;
-  fadeOutDuration?: number;
+  // Removed audio options - no longer supported
   // Other options
   includeWordFrequency?: boolean;
   [key: string]: any;
