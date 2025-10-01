@@ -7,10 +7,11 @@ import DownloadButton from './DownloadButton';
 import FileTypeIcon from './FileTypeIcon';
 import QRStyleSelector, { qrStyles } from './QRStyleSelector';
 import ConversionDisclaimer from './ConversionDisclaimer';
+import FilePreview from './FilePreview';
 import { ArrowRight } from 'lucide-react';
 import { ConversionType, ConversionOptions } from '@/lib/types';
 import { convertImage, compressImage, resizeImage } from '@/lib/converters/imageConverter';
-import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages, extractTextFromPDF, pdfToGrayscale, cropPDF, flattenPDF } from '@/lib/converters/pdfConverter';
+import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages, extractTextFromPDF, pdfToGrayscale, cropPDF, flattenPDF, addWatermarkToPDF } from '@/lib/converters/pdfConverter';
 import { convertVideo, convertAudio, videoToAudio, videoToGIF, trimVideo, compressVideo, videoToFrames, trimAudio } from '@/lib/converters/videoConverter';
 import { docxToHTML, docxToText, docxToPDF, htmlToText, markdownToHTML, markdownToPDF, htmlToMarkdown, htmlToDOCX, txtToDOCX, odtToDOCX, rtfToDOCX, docxToRTF, docxToODT } from '@/lib/converters/documentConverter';
 import { csvToJSON, jsonToCSV, xlsxToCSV, csvToXLSX, xlsxToJSON, jsonToXLSX, base64Encode, base64Decode, urlEncode, urlDecode, csvToXML } from '@/lib/converters/dataConverter';
@@ -504,7 +505,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           outputBlobs = await splitPDF(files[0]);
           break;
         case 'compress-pdf':
-          outputBlob = await compressPDF(files[0]);
+          outputBlob = await compressPDF(files[0], (options as any).compressionLevel || 'medium');
           break;
         case 'html-to-pdf':
           outputBlob = await htmlToPDF(textInput);
@@ -517,47 +518,11 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           outputBlob = await rotatePDF(files[0], degrees);
           break;
         case 'delete-pdf-pages':
-          // For now, create a simple version that removes the last page as an example
-          const arrayBuffer = await files[0].arrayBuffer();
-          const pdfDoc = await PDFDocument.load(arrayBuffer);
-          const pageCount = pdfDoc.getPageCount();
-          
-          if (pageCount > 1) {
-            // Remove the last page as an example
-            const pagesToKeep = Array.from({length: pageCount - 1}, (_, i) => i);
-            const newPdf = await PDFDocument.create();
-            const copiedPages = await newPdf.copyPages(pdfDoc, pagesToKeep);
-            copiedPages.forEach(page => newPdf.addPage(page));
-            
-            // Add a note about what was done
-            if (copiedPages.length > 0) {
-              const firstPage = copiedPages[0];
-              const { width, height } = firstPage.getSize();
-              firstPage.drawText('Last page removed (Example conversion)', {
-                x: 50,
-                y: height - 50,
-                size: 10,
-                color: { r: 0.8, g: 0.2, b: 0.2 },
-              });
-            }
-            
-            const pdfBytes = await newPdf.save();
-            outputBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+          if ((options as any).pagesToDelete) {
+            outputBlob = await deletePDFPages(files[0], (options as any).pagesToDelete);
           } else {
-            // If only one page, just return the original with a note
-            const pages = pdfDoc.getPages();
-            if (pages.length > 0) {
-              const firstPage = pages[0];
-              const { width, height } = firstPage.getSize();
-              firstPage.drawText('Cannot remove pages - only one page in document', {
-                x: 50,
-                y: height - 50,
-                size: 10,
-                color: { r: 0.8, g: 0.2, b: 0.2 },
-              });
-            }
-            const pdfBytes = await pdfDoc.save();
-            outputBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+            alert('Please specify which pages to delete');
+            return;
           }
           break;
 
@@ -1006,8 +971,12 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           break;
 
         case 'pdf-add-watermark':
-          // For now, just return the original PDF with a note
-          outputBlob = files[0];
+          if ((options as any).watermarkText) {
+            outputBlob = await addWatermarkToPDF(files[0], (options as any).watermarkText);
+          } else {
+            alert('Please enter watermark text');
+            return;
+          }
           break;
 
         case 'pdf-password':
@@ -1626,6 +1595,93 @@ Note: For best results, copy each slide content into PowerPoint manually.`;
                 }
                 multiple={['merge-pdf', 'create-zip', 'jpg-to-pdf', 'png-to-pdf', 'images-to-pdf-merge', 'images-to-pdf-single'].includes(conversion.id)}
               />
+            )}
+
+            <FilePreview files={files} onRemove={(index) => {
+              const newFiles = files.filter((_, i) => i !== index);
+              setFiles(newFiles);
+            }} />
+
+            {conversion.id === 'add-image-border' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Border Options</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Border Width: {(options as any).borderWidth || 20}px
+                    </label>
+                    <input
+                      type="range"
+                      min="5"
+                      max="100"
+                      step="5"
+                      value={(options as any).borderWidth || 20}
+                      onChange={(e) => setOptions({ ...options, borderWidth: parseInt(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Border Color</label>
+                    <input
+                      type="color"
+                      value={(options as any).borderColor || '#000000'}
+                      onChange={(e) => setOptions({ ...options, borderColor: e.target.value })}
+                      className="w-full h-10 rounded-lg"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {conversion.id === 'delete-pdf-pages' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Select Pages to Delete</h3>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Enter page numbers to delete (comma-separated, e.g., "1,3,5")
+                  </label>
+                  <input
+                    type="text"
+                    value={(options as any).pagesToDelete || ''}
+                    onChange={(e) => setOptions({ ...options, pagesToDelete: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="e.g., 1,3,5-7"
+                  />
+                </div>
+              </div>
+            )}
+
+            {conversion.id === 'compress-pdf' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Compression Level</h3>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  value={(options as any).compressionLevel || 'medium'}
+                  onChange={(e) => setOptions({ ...options, compressionLevel: e.target.value })}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            )}
+
+            {conversion.id === 'pdf-add-watermark' && files.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <h3 className="font-medium text-gray-900 mb-4">Watermark Options</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Watermark Text</label>
+                    <input
+                      type="text"
+                      value={(options as any).watermarkText || ''}
+                      onChange={(e) => setOptions({ ...options, watermarkText: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="Enter watermark text"
+                    />
+                  </div>
+                </div>
+              </div>
             )}
 
             {conversion.category === 'image' && files.length > 0 && (

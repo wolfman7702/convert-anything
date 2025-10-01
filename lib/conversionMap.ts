@@ -40,7 +40,7 @@ export const conversions: ConversionType[] = [
   { id: 'excel-to-pdf', name: 'Excel to PDF', from: 'xlsx', to: 'pdf', category: 'pdf', description: 'Convert Excel to PDF' },
   { id: 'powerpoint-to-pdf', name: 'PowerPoint to PDF', from: 'pptx', to: 'pdf', category: 'pdf', description: 'Convert PowerPoint to PDF' },
   { id: 'pdf-to-excel', name: 'PDF to Excel', from: 'pdf', to: 'xlsx', category: 'pdf', description: 'Convert PDF tables to Excel' },
-  { id: 'pdf-to-powerpoint', name: 'PDF to PowerPoint', from: 'pdf', to: 'pptx', category: 'pdf', description: 'Convert PDF to PowerPoint' },
+  // Removed non-implemented: pdf-to-powerpoint
   { id: 'pdf-to-csv', name: 'PDF to CSV', from: 'pdf', to: 'csv', category: 'pdf', description: 'Extract tables from PDF to CSV' },
   { id: 'pdf-to-html', name: 'PDF to HTML', from: 'pdf', to: 'html', category: 'pdf', description: 'Convert PDF to HTML' },
   { id: 'pdf-to-epub', name: 'PDF to EPUB', from: 'pdf', to: 'epub', category: 'pdf', description: 'Convert PDF to EPUB ebook' },
@@ -169,9 +169,7 @@ export const conversions: ConversionType[] = [
   { id: 'image-brightness', name: 'Adjust Brightness', from: 'image', to: 'image', category: 'image', description: 'Make image brighter or darker' },
 
   // PDF UTILITIES (5 new)
-  { id: 'pdf-add-page-numbers', name: 'Add Page Numbers', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Add page numbers to PDF' },
-  { id: 'pdf-reverse-pages', name: 'Reverse Page Order', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Reverse the order of PDF pages' },
-  { id: 'pdf-extract-pages', name: 'Extract Specific Pages', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Extract specific pages from PDF' },
+  // Removed non-implemented/duplicate: pdf-add-page-numbers, pdf-reverse-pages, pdf-extract-pages
   { id: 'pdf-remove-pages', name: 'Remove Specific Pages', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Remove specific pages from PDF' },
   { id: 'images-to-pdf-merge', name: 'Images to Single PDF', from: 'images', to: 'pdf', category: 'pdf', description: 'Combine multiple images into one PDF' },
 
@@ -197,8 +195,7 @@ export const conversions: ConversionType[] = [
   { id: 'image-pixelate', name: 'Pixelate Image', from: 'image', to: 'image', category: 'image', description: 'Apply pixelation effect' },
 
   // PDF ENHANCEMENTS (4 new)
-  { id: 'pdf-to-word', name: 'PDF to Word', from: 'pdf', to: 'docx', category: 'pdf', description: 'Convert PDF to editable Word document' },
-  { id: 'pdf-to-excel', name: 'PDF to Excel', from: 'pdf', to: 'xlsx', category: 'pdf', description: 'Extract tables from PDF to Excel', popular: true },
+  // Removed duplicates: pdf-to-word, pdf-to-excel (kept earlier definitions)
   { id: 'pdf-add-watermark', name: 'Add Watermark to PDF', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Add text watermark to PDF pages' },
   { id: 'pdf-password', name: 'Password Protect PDF', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Add password protection to PDF' },
 
@@ -300,7 +297,7 @@ export const conversions: ConversionType[] = [
 
   // ADDITIONAL PDF TOOLS (15 new)
   { id: 'pdf-to-html', name: 'PDF to HTML', from: 'pdf', to: 'html', category: 'pdf', description: 'Convert PDF to HTML format' },
-  { id: 'images-to-pdf-single', name: 'Images to PDF (Multi-page)', from: 'images', to: 'pdf', category: 'pdf', description: 'Combine multiple images into one PDF' },
+  // Removed duplicate of images-to-pdf-merge: images-to-pdf-single
   { id: 'pdf-grayscale', name: 'Convert PDF to Grayscale', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Remove colors from PDF' },
   { id: 'pdf-crop', name: 'Crop PDF Pages', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Crop margins from PDF pages' },
   { id: 'pdf-resize', name: 'Resize PDF Pages', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Change PDF page dimensions' },
