@@ -388,13 +388,13 @@ export async function pdfToText(file: File): Promise<Blob> {
   return new Blob([textContent], { type: 'text/plain' });
 }
 
-// Professional PDF to Word conversion that creates editable Word documents
+// Professional PDF to Word conversion that creates properly formatted Word documents
 export async function pdfToWord(file: File): Promise<Blob> {
   try {
     // Get clean text from PDF first
     const textContent = await extractTextFromPDF(file);
     
-    // Clean up the text
+    // Clean up the text and properly format it
     const cleanText = textContent
       .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
       .replace(/\s+-\s+/g, '-')
@@ -403,41 +403,69 @@ export async function pdfToWord(file: File): Promise<Blob> {
       .replace(/\s+!\s+/g, '! ')
       .trim();
 
-    // Split into lines and create properly formatted paragraphs
+    // Split into lines and process them properly
     const lines = cleanText.split('\n').filter(line => line.trim().length > 0);
     
     // Dynamic import to avoid SSR issues
     const { Document, Packer, Paragraph, TextRun } = await import('docx');
     
-    const paragraphs = lines.map(line => {
+    const paragraphs: any[] = [];
+    
+    for (const line of lines) {
       const text = line.trim();
+      
+      // Skip page markers
+      if (text.startsWith('--- Page')) {
+        continue;
+      }
+      
       let isBold = false;
       let fontSize = 22;
+      let spacing = 200;
       
-      // Make headers bold with larger font
-      if (text.match(/^[A-Z][A-Z\s]+$/) || 
-          text.match(/^[A-Z][a-z]+:$/) ||
-          text.match(/^\d+\.\s/) ||
-          text.includes('Small Group Discussion:')) {
+      // Determine formatting based on content
+      if (text.match(/^[A-Z][A-Z\s]+$/) || text.match(/^[A-Z][a-z]+:$/)) {
+        // Headers
         isBold = true;
         fontSize = 24;
-      }
-      
-      // Section headers get even larger
-      if (text.match(/^[A-Z][a-z]+\s+[A-Z][a-z]+:/)) {
+        spacing = 400;
+      } else if (text.match(/^\d+\.\s/)) {
+        // Numbered sections
+        isBold = true;
+        fontSize = 26;
+        spacing = 300;
+      } else if (text.includes('Small Group Discussion:')) {
+        // Discussion sections
+        isBold = true;
+        fontSize = 24;
+        spacing = 300;
+      } else if (text.match(/^[A-Z][a-z]+\s+[A-Z][a-z]+:/)) {
+        // Section headers like "What God Knew"
         isBold = true;
         fontSize = 28;
+        spacing = 400;
+      } else if (text.match(/^[A-Z][a-z]+:/)) {
+        // Sub-headers like "First:", "Second:"
+        isBold = true;
+        fontSize = 22;
+        spacing = 200;
+      } else if (text.match(/^Preview:/)) {
+        // Preview sections
+        isBold = true;
+        fontSize = 22;
+        spacing = 300;
       }
       
-      return new Paragraph({
+      // Create paragraph with proper formatting
+      paragraphs.push(new Paragraph({
         children: [new TextRun({
           text: text,
           bold: isBold,
           size: fontSize
         })],
-        spacing: { after: 200 }
-      });
-    });
+        spacing: { after: spacing }
+      }));
+    }
 
     // Create a simple, reliable Word document
     const doc = new Document({
@@ -451,7 +479,7 @@ export async function pdfToWord(file: File): Promise<Blob> {
   } catch (error) {
     console.error('PDF to Word error:', error);
     
-    // Ultimate fallback - create RTF file
+    // Ultimate fallback - create RTF file with proper formatting
     const textContent = await extractTextFromPDF(file);
     const cleanText = textContent
       .replace(/\bo\s+/g, '')
@@ -461,22 +489,40 @@ export async function pdfToWord(file: File): Promise<Blob> {
       .replace(/\s+!\s+/g, '! ')
       .trim();
     
-    // Create a simple RTF file that Word can definitely open
+    // Create a properly formatted RTF file
+    const rtfLines = cleanText.split('\n').filter(line => line.trim().length > 0);
     const rtfContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}}
-${cleanText.split('\n').map(line => {
+${rtfLines.map(line => {
   const text = line.trim();
-  let isBold = false;
   
-  // Make headers bold
+  // Skip page markers
+  if (text.startsWith('--- Page')) {
+    return '';
+  }
+  
+  let isBold = false;
+  let fontSize = 22;
+  
+  // Determine formatting
   if (text.match(/^[A-Z][A-Z\s]+$/) || 
       text.match(/^[A-Z][a-z]+:$/) ||
       text.match(/^\d+\.\s/) ||
-      text.includes('Small Group Discussion:')) {
+      text.includes('Small Group Discussion:') ||
+      text.match(/^Preview:/)) {
     isBold = true;
+    fontSize = 24;
   }
   
-  return isBold ? `{\\b ${text}}\\par` : `${text}\\par`;
-}).join('\n')}
+  if (text.match(/^[A-Z][a-z]+\s+[A-Z][a-z]+:/)) {
+    isBold = true;
+    fontSize = 28;
+  }
+  
+  const fontTag = `\\fs${fontSize * 2}`; // RTF font size is in half-points
+  const boldTag = isBold ? '\\b ' : '';
+  
+  return `{${fontTag} ${boldTag}${text}}\\par\\par`;
+}).filter(line => line.length > 0).join('\n')}
 }`;
     
     return new Blob([rtfContent], { type: 'application/rtf' });
