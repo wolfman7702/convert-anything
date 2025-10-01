@@ -388,7 +388,7 @@ export async function pdfToText(file: File): Promise<Blob> {
   return new Blob([textContent], { type: 'text/plain' });
 }
 
-// Professional PDF to Word conversion that preserves exact visual layout
+// Professional PDF to Word conversion that creates editable Word documents
 export async function pdfToWord(file: File): Promise<Blob> {
   try {
     // Dynamic import to avoid SSR issues
@@ -410,46 +410,71 @@ export async function pdfToWord(file: File): Promise<Blob> {
     // Process each page
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better quality
+      const viewport = page.getViewport({ scale: 1.0 });
 
-      // Render the entire page as a high-quality image
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d')!;
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
+      // Get text content with positioning information
+      const textContent = await page.getTextContent();
+      
+      // Extract images from the page
+      const images = await extractImagesFromPage(page, viewport);
+      
+      // Sort text items by position (top to bottom, left to right)
+      const sortedTextItems = textContent.items
+        .filter((item: any) => item.str && item.str.trim())
+        .sort((a: any, b: any) => {
+          // Sort by Y position (top to bottom)
+          const aY = a.transform ? a.transform[5] : 0;
+          const bY = b.transform ? b.transform[5] : 0;
+          if (Math.abs(aY - bY) > 5) {
+            return bY - aY; // Higher Y values first (top of page)
+          }
+          // If same Y, sort by X position (left to right)
+          const aX = a.transform ? a.transform[4] : 0;
+          const bX = b.transform ? b.transform[4] : 0;
+          return aX - bX;
+        });
 
-      await page.render({ canvasContext: context, viewport }).promise;
+      // Add images first (they're typically at the top)
+      for (const image of images) {
+        paragraphs.push(new Paragraph({
+          children: [new ImageRun({
+            data: image.data,
+            transformation: {
+              width: image.width,
+              height: image.height,
+            },
+          })],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 300 }
+        }));
+      }
 
-      // Convert canvas to base64 for embedding
-      const imageDataUrl = canvas.toDataURL('image/png', 0.95);
+      // Process text items and maintain formatting
+      let currentLine: any[] = [];
+      let lastY = -1;
 
-      // Add the page image to Word document
-      paragraphs.push(new Paragraph({
-        children: [new ImageRun({
-          data: imageDataUrl,
-          transformation: {
-            width: Math.min(600, canvas.width), // Max width of 600px
-            height: (Math.min(600, canvas.width) * canvas.height) / canvas.width,
-          },
-        })],
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 400 }
-      }));
+      for (const item of sortedTextItems) {
+        const currentY = item.transform ? item.transform[5] : 0;
+        
+        // If Y position changed significantly, start a new line
+        if (lastY !== -1 && Math.abs(currentY - lastY) > 10) {
+          if (currentLine.length > 0) {
+            paragraphs.push(createEditableParagraphFromTextItems(currentLine));
+            currentLine = [];
+          }
+        }
 
-      // Add page number
-      paragraphs.push(new Paragraph({
-        children: [new TextRun({
-          text: `Page ${pageNum}`,
-          bold: true,
-          size: 16,
-          color: "666666"
-        })],
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 600 }
-      }));
+        currentLine.push(item);
+        lastY = currentY;
+      }
+
+      // Add the last line
+      if (currentLine.length > 0) {
+        paragraphs.push(createEditableParagraphFromTextItems(currentLine));
+      }
     }
 
-    // Create Word document with embedded page images
+    // Create Word document with editable content
     const doc = new Document({
       sections: [{
         properties: {},
@@ -461,7 +486,7 @@ export async function pdfToWord(file: File): Promise<Blob> {
   } catch (error) {
     console.error('PDF to Word error:', error);
     
-    // Fallback to text-only conversion
+    // Fallback to simple text conversion
     const textContent = await extractTextFromPDF(file);
     const { Document, Packer, Paragraph, TextRun } = await import('docx');
     
@@ -504,6 +529,65 @@ export async function pdfToWord(file: File): Promise<Blob> {
 
     return await Packer.toBlob(doc);
   }
+}
+
+// Helper function to create editable paragraphs from text items with proper formatting
+function createEditableParagraphFromTextItems(textItems: any[]): any {
+  const { Paragraph, TextRun } = require('docx');
+  
+  const textRuns: any[] = [];
+  
+  for (const item of textItems) {
+    let text = item.str || '';
+    
+    // Clean up the text
+    text = text
+      .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
+      .replace(/\s+-\s+/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    if (!text) continue;
+    
+    // Determine formatting based on content
+    let isBold = false;
+    let fontSize = 22;
+    
+    // Check for headers (all caps or title case)
+    if (text.match(/^[A-Z][A-Z\s]+$/) || text.match(/^[A-Z][a-z]+:$/)) {
+      isBold = true;
+      fontSize = 24;
+    }
+    
+    // Check for numbered lists
+    if (text.match(/^\d+\.\s/)) {
+      isBold = true;
+      fontSize = 24;
+    }
+    
+    // Check for discussion sections
+    if (text.includes('Small Group Discussion:')) {
+      isBold = true;
+      fontSize = 24;
+    }
+    
+    // Check for section headers
+    if (text.match(/^[A-Z][a-z]+\s+[A-Z][a-z]+:/)) {
+      isBold = true;
+      fontSize = 28;
+    }
+    
+    textRuns.push(new TextRun({
+      text: text + ' ',
+      bold: isBold,
+      size: fontSize
+    }));
+  }
+  
+  return new Paragraph({
+    children: textRuns,
+    spacing: { after: 200 }
+  });
 }
 
 // Helper function to extract images from a PDF page
