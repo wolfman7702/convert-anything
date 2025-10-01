@@ -12,7 +12,6 @@ import { ArrowRight } from 'lucide-react';
 import { ConversionType, ConversionOptions } from '@/lib/types';
 import { convertImage, compressImage, resizeImage } from '@/lib/converters/imageConverter';
 import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages, extractTextFromPDF, pdfToGrayscale, cropPDF, flattenPDF, addWatermarkToPDF } from '@/lib/converters/pdfConverter';
-import { pdfToWord } from '@/lib/converters/pdfToWord';
 import { PDFDocument } from 'pdf-lib';
 // Removed video/audio converters - not supported in browser
 import { docxToHTML, docxToText, docxToPDF, htmlToText, markdownToHTML, markdownToPDF, htmlToMarkdown, htmlToDOCX, txtToDOCX, odtToDOCX, rtfToDOCX, docxToRTF, docxToODT } from '@/lib/converters/documentConverter';
@@ -229,10 +228,6 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         return `pixelated${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.jpg' : '.jpg'}`;
       
       // New PDF conversions
-      case 'pdf-to-word':
-        return `${baseName}.docx`; // Will be .rtf if fallback is used
-      case 'pdf-to-excel':
-        return `${baseName}.xlsx`;
       case 'pdf-add-watermark':
         return `watermarked${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.pdf' : '.pdf'}`;
       // Removed: pdf-password (not supported client-side)
@@ -297,24 +292,6 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         return `${baseName}.xls`;
 
       // PDF TOOLS
-      case 'pdf-to-html':
-        return `${baseName}.html`;
-      case 'pdf-to-powerpoint':
-        return `${baseName}-presentation.txt`;
-      case 'pdf-to-epub':
-        return `${baseName}.epub`;
-      case 'pdf-to-mobi':
-        return `${baseName}.mobi`;
-      case 'pdf-to-azw3':
-        return `${baseName}.azw3`;
-      case 'pdf-to-fb2':
-        return `${baseName}.fb2`;
-      case 'pdf-to-csv':
-        return `${baseName}.csv`;
-      case 'pdf-to-rtf':
-        return `${baseName}.rtf`;
-      case 'pdf-to-odt':
-        return `${baseName}.odt`;
       case 'images-to-pdf-single':
         return 'combined.pdf';
       case 'pdf-grayscale':
@@ -771,83 +748,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           break;
 
         // PDF conversion cases
-        case 'pdf-to-word':
-          // Use enhanced PDF to Word conversion that preserves images and layout
-          outputBlob = await pdfToWord(files[0]);
-          break;
 
-        case 'pdf-to-excel':
-          // Automatically extract text from PDF and convert to Excel
-          const pdfTextForExcel = await extractTextFromPDF(files[0]);
-          console.log('Extracted PDF text length:', pdfTextForExcel.length);
-          console.log('First 200 chars:', pdfTextForExcel.substring(0, 200));
-          
-          // Always create Excel content - either with extracted text or with message
-          let csvContent = '';
-          
-          if (pdfTextForExcel.includes('PDF Text Extraction Result') || pdfTextForExcel.includes('PDF may contain')) {
-            // If extraction failed, create Excel with the message
-            console.log('Text extraction failed, using fallback message');
-            const csvLines = pdfTextForExcel.split('\n').filter(line => line.trim());
-            csvContent = csvLines.map(line => `"${line.replace(/"/g, '""')}"`).join('\n');
-          } else {
-            // We got actual text content - convert it properly to Excel
-            console.log('Text extraction succeeded, processing content');
-            
-            // Split text into logical sections (paragraphs, sentences)
-            const paragraphs = pdfTextForExcel
-              .split(/\n\s*\n/) // Split by double newlines (paragraphs)
-              .filter(p => p.trim().length > 0)
-              .map(p => p.trim());
-            
-            console.log('Number of paragraphs:', paragraphs.length);
-            
-            if (paragraphs.length === 0) {
-              // No paragraphs found, try splitting by sentences
-              const sentences = pdfTextForExcel
-                .split(/[.!?]+/)
-                .filter(s => s.trim().length > 10)
-                .map(s => s.trim());
-              
-              console.log('Number of sentences:', sentences.length);
-              
-              if (sentences.length > 0) {
-                const excelData = sentences.map((sentence, index) => ({
-                  'Sentence': index + 1,
-                  'Content': sentence
-                }));
-                
-                const headers = Object.keys(excelData[0]).join(',');
-                const rows = excelData.map(row => 
-                  Object.values(row).map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
-                );
-                csvContent = [headers, ...rows].join('\n');
-              } else {
-                // Even sentences failed, just put the raw text
-                csvContent = `"Content"\n"${pdfTextForExcel.replace(/"/g, '""')}"`;
-              }
-            } else {
-              // We have paragraphs - use them
-              const excelData = paragraphs.map((paragraph, index) => ({
-                'Paragraph': index + 1,
-                'Content': paragraph.replace(/\n/g, ' ').trim()
-              }));
-              
-              const headers = Object.keys(excelData[0]).join(',');
-              const rows = excelData.map(row => 
-                Object.values(row).map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
-              );
-              csvContent = [headers, ...rows].join('\n');
-            }
-          }
-          
-          console.log('Final CSV content length:', csvContent.length);
-          console.log('First 300 chars of CSV:', csvContent.substring(0, 300));
-          
-          // Create Excel file
-          const tempFile = new File([csvContent], 'temp.csv', { type: 'text/csv' });
-          outputBlob = await csvToXLSX(tempFile);
-          break;
 
         case 'pdf-add-watermark':
           if ((options as any).watermarkText) {
@@ -1027,11 +928,6 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           break;
 
         // PDF tools
-        case 'pdf-to-html':
-          const pdfHtmlContent = await extractTextFromPDF(files[0]);
-          const pdfHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PDF Content</title></head><body><pre>${pdfHtmlContent}</pre></body></html>`;
-          outputBlob = new Blob([pdfHtml], { type: 'text/html' });
-          break;
 
         case 'pdf-to-powerpoint':
           // Extract text from PDF and create a proper presentation structure
@@ -1348,20 +1244,6 @@ ${slide}
         
         <ConversionDisclaimer conversionId={conversion.id} />
         
-        {conversion.id === 'pdf-to-word' && (
-          <div className="mt-4 space-y-2">
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>✓ Preserves:</strong> Text formatting, bold, italic, headings, images, bullet points
-              </p>
-            </div>
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                <strong>⚠ Limitations:</strong> Complex tables, form fields, and annotations may not convert perfectly
-              </p>
-            </div>
-          </div>
-        )}
 
         {!result && results.length === 0 && (
           <>
