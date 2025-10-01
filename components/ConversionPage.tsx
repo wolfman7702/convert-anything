@@ -11,7 +11,7 @@ import FilePreview from './FilePreview';
 import { ArrowRight } from 'lucide-react';
 import { ConversionType, ConversionOptions } from '@/lib/types';
 import { convertImage, compressImage, resizeImage } from '@/lib/converters/imageConverter';
-import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages, extractTextFromPDF, pdfToGrayscale, cropPDF, flattenPDF, addWatermarkToPDF } from '@/lib/converters/pdfConverter';
+import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages, extractTextFromPDF, pdfToGrayscale, cropPDF, flattenPDF, addWatermarkToPDF, pdfToWord } from '@/lib/converters/pdfConverter';
 import { PDFDocument } from 'pdf-lib';
 // Removed video/audio converters - not supported in browser
 import { docxToHTML, docxToText, docxToPDF, htmlToText, markdownToHTML, markdownToPDF, htmlToMarkdown, htmlToDOCX, txtToDOCX, odtToDOCX, rtfToDOCX, docxToRTF, docxToODT } from '@/lib/converters/documentConverter';
@@ -771,9 +771,8 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
 
         // PDF conversion cases
         case 'pdf-to-word':
-          // Extract text from PDF and create a simple DOCX
-          const pdfTextForWord = await extractTextFromPDF(files[0]);
-          outputBlob = await txtToDOCX(pdfTextForWord);
+          // Use enhanced PDF to Word conversion that preserves images and layout
+          outputBlob = await pdfToWord(files[0]);
           break;
 
         case 'pdf-to-excel':

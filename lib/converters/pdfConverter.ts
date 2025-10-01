@@ -11,7 +11,7 @@ export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Pr
     // Set up the worker - use local worker file
     pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
     
-    const arrayBuffer = await file.arrayBuffer();
+  const arrayBuffer = await file.arrayBuffer();
     
     // Add more options for better compatibility
     const loadingTask = pdfjsLib.getDocument({
@@ -21,15 +21,15 @@ export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Pr
     });
     
     const pdf = await loadingTask.promise;
-    const images: Blob[] = [];
+  const images: Blob[] = [];
 
     // Render each page as an image
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
       const viewport = page.getViewport({ scale: 2.0 });
 
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d')!;
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d')!;
       canvas.width = viewport.width;
       canvas.height = viewport.height;
 
@@ -37,14 +37,14 @@ export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Pr
       await page.render({ canvasContext: context, viewport }).promise;
 
       // Convert canvas to blob
-      const blob = await new Promise<Blob>((resolve) => {
+    const blob = await new Promise<Blob>((resolve) => {
         canvas.toBlob((b) => resolve(b!), `image/${format === 'jpg' ? 'jpeg' : format}`, 0.95);
-      });
+    });
 
-      images.push(blob);
-    }
+    images.push(blob);
+  }
 
-    return images;
+  return images;
   } catch (error) {
     console.error('PDF to images error:', error);
     throw new Error(`Failed to convert PDF to images: ${error}`);
@@ -276,9 +276,11 @@ export async function extractTextFromPDF(file: File): Promise<string> {
         .reduce((acc, text, index, array) => {
           // Clean up fake bullet points and formatting issues
           let cleanText = text
-            .replace(/\bo\s/g, '• ')  // Replace standalone "o " with proper bullet
+            .replace(/\bo\s+/g, '')  // Remove standalone "o " characters completely
             .replace(/\s+-\s+/g, '-')  // Fix spacing around dashes
             .replace(/\s+/g, ' ')      // Normalize multiple spaces
+            .replace(/\s+\.\s+/g, '. ')  // Fix spacing around periods
+            .replace(/\s+!\s+/g, '! ')  // Fix spacing around exclamation marks
             .trim();
           
           if (index === 0) return cleanText;
@@ -384,6 +386,153 @@ The PDF file could not be processed. Please ensure it's a valid, readable PDF fi
 export async function pdfToText(file: File): Promise<Blob> {
   const textContent = await extractTextFromPDF(file);
   return new Blob([textContent], { type: 'text/plain' });
+}
+
+// Enhanced PDF to Word conversion that preserves layout and images
+export async function pdfToWord(file: File): Promise<Blob> {
+  try {
+    // Dynamic import to avoid SSR issues
+    const pdfjsLib = await import('pdfjs-dist');
+    const { Document, Packer, Paragraph, TextRun, ImageRun, WidthType } = await import('docx');
+
+    // Set up the worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({
+      data: arrayBuffer,
+      disableFontFace: true,
+    });
+
+    const pdf = await loadingTask.promise;
+    const paragraphs: any[] = [];
+    const images: any[] = [];
+
+    // Process each page
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 2.0 });
+
+      // Add page header
+      paragraphs.push(new Paragraph({
+        children: [new TextRun({
+          text: `--- Page ${pageNum} ---`,
+          bold: true,
+          size: 16,
+          color: "666666"
+        })],
+        spacing: { after: 300 }
+      }));
+
+      // Render page as image for visual reference
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d')!;
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      await page.render({ canvasContext: context, viewport }).promise;
+
+      // Convert canvas to blob and embed as image
+      const imageBlob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((b) => resolve(b!), 'image/png', 0.9);
+      });
+
+      // Convert blob to base64 for embedding
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(imageBlob);
+      });
+
+      // Add the page image
+      paragraphs.push(new Paragraph({
+        children: [new ImageRun({
+          data: base64,
+          transformation: {
+            width: 400,
+            height: (400 * canvas.height) / canvas.width,
+          },
+        })],
+        spacing: { after: 400 }
+      }));
+
+      // Extract text content for this page
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str || '')
+        .filter(text => text.trim().length > 0)
+        .join(' ');
+
+      if (pageText.trim()) {
+        // Add extracted text below the image
+        const cleanText = pageText
+          .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
+          .replace(/\s+-\s+/g, '-')
+          .replace(/\s+/g, ' ')
+          .replace(/\s+\.\s+/g, '. ')
+          .replace(/\s+!\s+/g, '! ')
+          .trim();
+
+        paragraphs.push(new Paragraph({
+          children: [new TextRun({
+            text: "Extracted Text:",
+            bold: true,
+            size: 18,
+            color: "0066CC"
+          })],
+          spacing: { before: 200, after: 100 }
+        }));
+
+        paragraphs.push(new Paragraph({
+          children: [new TextRun({
+            text: cleanText,
+            size: 20
+          })],
+          spacing: { after: 400 }
+        }));
+      }
+    }
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: paragraphs
+      }]
+    });
+
+    return await Packer.toBlob(doc);
+  } catch (error) {
+    console.error('PDF to Word error:', error);
+    
+    // Fallback to simple text conversion
+    const textContent = await extractTextFromPDF(file);
+    const { Document, Packer, Paragraph, TextRun } = await import('docx');
+    
+    const lines = textContent.split('\n').filter(line => line.trim().length > 0);
+    const paragraphs = lines.map(line => 
+      new Paragraph({
+        children: [new TextRun({
+          text: line.trim()
+            .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
+            .replace(/\s+-\s+/g, '-')
+            .replace(/\s+/g, ' ')
+            .replace(/\s+\.\s+/g, '. ')
+            .replace(/\s+!\s+/g, '! '),
+          size: 20
+        })],
+        spacing: { after: 150 }
+      })
+    );
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: paragraphs
+      }]
+    });
+
+    return await Packer.toBlob(doc);
+  }
 }
 
 export async function addWatermarkToPDF(file: File, watermarkText: string): Promise<Blob> {
