@@ -258,17 +258,39 @@ export async function extractTextFromPDF(file: File): Promise<string> {
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       
-      // Extract text items and join them with proper spacing
+      // Extract text items and preserve formatting
       const pageText = textContent.items
         .map((item: any) => {
           // Handle text items with positioning
           if (item.str) {
+            // Add line breaks for items that appear to be on new lines
+            if (item.transform && item.transform[5] !== undefined) {
+              // Check if this item is significantly lower than the previous one (new line)
+              return item.str;
+            }
             return item.str;
           }
           return '';
         })
         .filter(text => text.trim().length > 0)
-        .join(' ');
+        .reduce((acc, text, index, array) => {
+          // Add spaces between words, but preserve line breaks
+          if (index === 0) return text;
+          
+          // Check if this looks like a new line (bullet points, numbers, etc.)
+          const prevText = array[index - 1];
+          const isNewLine = text.match(/^[•\-\*]\s/) || 
+                           text.match(/^\d+\.\s/) || 
+                           text.match(/^[A-Z][a-z]+:/) ||
+                           (prevText && prevText.endsWith(':') && text.trim().length > 0);
+          
+          if (isNewLine) {
+            return acc + '\n' + text;
+          }
+          
+          // Add space between regular text
+          return acc + ' ' + text;
+        }, '');
       
       if (pageText.trim()) {
         extractedText += `\n--- Page ${pageNum} ---\n`;
