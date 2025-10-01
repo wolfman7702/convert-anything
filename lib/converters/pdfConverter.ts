@@ -212,21 +212,68 @@ export async function flattenPDF(file: File): Promise<Blob> {
 }
 
 export async function extractTextFromPDF(file: File): Promise<string> {
-  // Simple implementation - return instructions for manual extraction
-  return `PDF Text Extraction
-
-This is a simplified text extraction. For accurate PDF text extraction, please use a dedicated PDF tool.
+  try {
+    // Dynamic import to avoid SSR issues
+    const pdfjsLib = await import('pdfjs-dist');
+    
+    // Set up the worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+    
+    let extractedText = '';
+    
+    // Extract text from each page
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      
+      // Extract text items and join them
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ')
+        .trim();
+      
+      if (pageText) {
+        extractedText += `\n--- Page ${pageNum} ---\n`;
+        extractedText += pageText + '\n';
+      }
+    }
+    
+    return extractedText.trim() || 'No readable text found in this PDF. It may be a scanned document or contain only images.';
+    
+  } catch (error) {
+    console.error('PDF text extraction error:', error);
+    
+    // Fallback: try to get basic info about the PDF
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      const pages = pdfDoc.getPages();
+      
+      return `PDF Text Extraction Failed
 
 File: ${file.name}
 Size: ${(file.size / 1024).toFixed(2)} KB
+Pages: ${pages.length}
 
-To extract text from this PDF:
-1. Open the PDF in Adobe Reader
-2. Select all text (Ctrl+A)
-3. Copy the text (Ctrl+C)
-4. Paste into a text editor
+This PDF could not be processed for text extraction. Possible reasons:
+- Scanned PDF (image-based, no text layer)
+- Password-protected PDF
+- Corrupted file
+- Complex formatting
 
-Alternatively, use online PDF text extraction tools for better results.`;
+Try using Adobe Acrobat Reader or online PDF text extractors for better results.`;
+    } catch (fallbackError) {
+      return `Error processing PDF: ${file.name}
+
+File size: ${(file.size / 1024).toFixed(2)} KB
+
+The PDF file could not be processed. Please ensure it's a valid, readable PDF file.`;
+    }
+  }
 }
 
 // New function specifically for PDF to Text conversion
