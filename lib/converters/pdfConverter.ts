@@ -8,11 +8,19 @@ export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Pr
     // Dynamic import to avoid SSR issues
     const pdfjsLib = await import('pdfjs-dist');
     
-    // Set up the worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    // Set up the worker - use a more reliable CDN
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
     
     const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    
+    // Add more options for better compatibility
+    const loadingTask = pdfjsLib.getDocument({
+      data: arrayBuffer,
+      cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+      cMapPacked: true,
+      standardFontDataUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/standard_fonts/',
+    });
+    
     const pdf = await loadingTask.promise;
     const images: Blob[] = [];
 
@@ -230,11 +238,19 @@ export async function extractTextFromPDF(file: File): Promise<string> {
     // Dynamic import to avoid SSR issues
     const pdfjsLib = await import('pdfjs-dist');
     
-    // Set up the worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    // Set up the worker - use a more reliable CDN
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
     
     const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    
+    // Add more options for better compatibility
+    const loadingTask = pdfjsLib.getDocument({
+      data: arrayBuffer,
+      cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+      cMapPacked: true,
+      standardFontDataUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/standard_fonts/',
+    });
+    
     const pdf = await loadingTask.promise;
     
     let extractedText = '';
@@ -244,24 +260,67 @@ export async function extractTextFromPDF(file: File): Promise<string> {
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       
-      // Extract text items and join them
+      // Extract text items and join them with proper spacing
       const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ')
-        .trim();
+        .map((item: any) => {
+          // Handle text items with positioning
+          if (item.str) {
+            return item.str;
+          }
+          return '';
+        })
+        .filter(text => text.trim().length > 0)
+        .join(' ');
       
-      if (pageText) {
+      if (pageText.trim()) {
         extractedText += `\n--- Page ${pageNum} ---\n`;
-        extractedText += pageText + '\n';
+        extractedText += pageText.trim() + '\n';
+      } else {
+        // Try alternative extraction method
+        const viewport = page.getViewport({ scale: 1.0 });
+        const textLayer = await page.getTextContent();
+        
+        // More aggressive text extraction
+        const allText = textLayer.items
+          .map((item: any) => item.str || '')
+          .join('')
+          .trim();
+        
+        if (allText) {
+          extractedText += `\n--- Page ${pageNum} ---\n`;
+          extractedText += allText + '\n';
+        }
       }
     }
     
-    return extractedText.trim() || 'No readable text found in this PDF. It may be a scanned document or contain only images.';
+    const result = extractedText.trim();
+    
+    if (result) {
+      return result;
+    } else {
+      // If no text found, try a different approach
+      return `PDF Text Extraction - No Readable Text Found
+
+File: ${file.name}
+Size: ${(file.size / 1024).toFixed(2)} KB
+Pages: ${pdf.numPages}
+
+This PDF appears to be a scanned document or contains only images without a text layer.
+The file structure was successfully read, but no extractable text was found.
+
+To extract text from this PDF:
+1. Use OCR (Optical Character Recognition) software
+2. Adobe Acrobat with OCR enabled
+3. Online OCR tools like Google Drive or Adobe Online
+4. Specialized PDF text extraction tools
+
+The PDF file itself is valid and readable.`;
+    }
     
   } catch (error) {
     console.error('PDF text extraction error:', error);
     
-    // Fallback: try to get basic info about the PDF
+    // Enhanced fallback with more debugging info
     try {
       const arrayBuffer = await file.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
@@ -272,18 +331,22 @@ export async function extractTextFromPDF(file: File): Promise<string> {
 File: ${file.name}
 Size: ${(file.size / 1024).toFixed(2)} KB
 Pages: ${pages.length}
+Error: ${error instanceof Error ? error.message : 'Unknown error'}
 
 This PDF could not be processed for text extraction. Possible reasons:
 - Scanned PDF (image-based, no text layer)
 - Password-protected PDF
 - Corrupted file
 - Complex formatting
+- PDF.js library loading issue
 
 Try using Adobe Acrobat Reader or online PDF text extractors for better results.`;
     } catch (fallbackError) {
       return `Error processing PDF: ${file.name}
 
 File size: ${(file.size / 1024).toFixed(2)} KB
+Error: ${error instanceof Error ? error.message : 'Unknown error'}
+Fallback error: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}
 
 The PDF file could not be processed. Please ensure it's a valid, readable PDF file.`;
     }
