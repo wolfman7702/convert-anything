@@ -8,17 +8,17 @@ export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Pr
     // Dynamic import to avoid SSR issues
     const pdfjsLib = await import('pdfjs-dist');
     
-    // Set up the worker - use a more reliable CDN
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+    // Set up the worker - use a known working version
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.js`;
     
     const arrayBuffer = await file.arrayBuffer();
     
     // Add more options for better compatibility
     const loadingTask = pdfjsLib.getDocument({
       data: arrayBuffer,
-      cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+      cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/cmaps/`,
       cMapPacked: true,
-      standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`,
+      standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/standard_fonts/`,
     });
     
     const pdf = await loadingTask.promise;
@@ -238,17 +238,17 @@ export async function extractTextFromPDF(file: File): Promise<string> {
     // Dynamic import to avoid SSR issues
     const pdfjsLib = await import('pdfjs-dist');
     
-    // Set up the worker - use a more reliable CDN
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+    // Set up the worker - use a known working version
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.js`;
     
     const arrayBuffer = await file.arrayBuffer();
     
     // Add more options for better compatibility
     const loadingTask = pdfjsLib.getDocument({
       data: arrayBuffer,
-      cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+      cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/cmaps/`,
       cMapPacked: true,
-      standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`,
+      standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/standard_fonts/`,
     });
     
     const pdf = await loadingTask.promise;
