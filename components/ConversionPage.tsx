@@ -13,7 +13,7 @@ import { ConversionType, ConversionOptions } from '@/lib/types';
 import { convertImage, compressImage, resizeImage } from '@/lib/converters/imageConverter';
 import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages, extractTextFromPDF, pdfToGrayscale, cropPDF, flattenPDF, addWatermarkToPDF } from '@/lib/converters/pdfConverter';
 import { PDFDocument } from 'pdf-lib';
-import { convertVideo, convertAudio, videoToAudio, videoToGIF, trimVideo, compressVideo, videoToFrames, trimAudio } from '@/lib/converters/videoConverter';
+// Removed video/audio converters - not supported in browser
 import { docxToHTML, docxToText, docxToPDF, htmlToText, markdownToHTML, markdownToPDF, htmlToMarkdown, htmlToDOCX, txtToDOCX, odtToDOCX, rtfToDOCX, docxToRTF, docxToODT } from '@/lib/converters/documentConverter';
 import { csvToJSON, jsonToCSV, xlsxToCSV, csvToXLSX, xlsxToJSON, jsonToXLSX, base64Encode, base64Decode, urlEncode, urlDecode, csvToXML } from '@/lib/converters/dataConverter';
 import { jsonToXML, xmlToJSON, yamlToJSON, jsonToYAML, tsvToCSV, csvToTSV, htmlTableToCSV } from '@/lib/converters/dataFormatConverter';
@@ -76,17 +76,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
       case 'delete-pdf-pages':
         return `edited${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.pdf' : '.pdf'}`;
       
-      // Video conversions
-      case 'video-to-gif':
-        return `animation.gif`;
-      case 'video-to-frames':
-        return `frame${indexSuffix}.png`;
-      case 'trim-video':
-        return `trimmed${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp4' : '.mp4'}`;
-      case 'compress-video':
-        return `compressed${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp4' : '.mp4'}`;
-      case 'trim-audio':
-        return `trimmed${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp3' : '.mp3'}`;
+      // Removed video/audio conversions - not supported in browser
       
       // Document conversions
       case 'docx-to-pdf':
@@ -246,23 +236,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         return `watermarked${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.pdf' : '.pdf'}`;
       // Removed: pdf-password (not supported client-side)
       
-      // New video conversions
-      case 'video-add-audio':
-        return `with-audio${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp4' : '.mp4'}`;
-      case 'video-mute':
-        return `muted${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp4' : '.mp4'}`;
-      case 'video-reverse':
-        return `reversed${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp4' : '.mp4'}`;
-      case 'video-loop':
-        return `looped${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp4' : '.mp4'}`;
-      
-      // New audio conversions
-      case 'audio-merge':
-        return `merged${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp3' : '.mp3'}`;
-      case 'audio-normalize':
-        return `normalized${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp3' : '.mp3'}`;
-      case 'audio-fade':
-        return `faded${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.mp3' : '.mp3'}`;
+      // Removed video/audio conversions - not supported in browser
       
       // New code formatting
       case 'minify-css':
@@ -281,52 +255,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
       case 'gif-to-png':
         return `${baseName}.${conversion.to}`;
 
-      // ADDITIONAL AUDIO FORMATS
-      case 'flac-to-wav':
-      case 'flac-to-mp3':
-      case 'flac-to-ogg':
-      case 'flac-to-aac':
-      case 'flac-to-wma':
-      case 'aac-to-wav':
-      case 'aac-to-mp3':
-      case 'aac-to-flac':
-      case 'aac-to-ogg':
-      case 'aac-to-wma':
-      case 'wma-to-wav':
-      case 'wma-to-mp3':
-      case 'wma-to-flac':
-      case 'wma-to-ogg':
-      case 'wma-to-aac':
-      case 'wav-to-flac':
-      case 'wav-to-aac':
-      case 'wav-to-wma':
-      case 'wav-to-ogg':
-      case 'ogg-to-wav':
-      case 'ogg-to-flac':
-      case 'ogg-to-aac':
-      case 'ogg-to-wma':
-        return `${baseName}.${conversion.to}`;
-
-      // ADDITIONAL VIDEO FORMATS
-      case 'flv-to-webm':
-      case 'flv-to-mp4':
-      case 'flv-to-avi':
-      case 'wmv-to-webm':
-      case 'wmv-to-mp4':
-      case 'mkv-to-webm':
-      case 'mkv-to-mp4':
-      case 'mkv-to-avi':
-      case 'mkv-to-mov':
-      case 'webm-to-avi':
-      case 'webm-to-mov':
-      case 'webm-to-mkv':
-      case 'webm-to-flv':
-      case 'webm-to-wmv':
-      case 'mov-to-avi':
-      case 'mov-to-mkv':
-      case 'avi-to-mov':
-      case 'avi-to-mkv':
-        return `${baseName}.${conversion.to}`;
+      // Removed additional audio/video formats - not supported in browser
 
       // DOCUMENT FORMATS
       case 'pdf-to-text':
@@ -526,57 +455,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           }
           break;
 
-        // Video conversions
-        case 'mp4-to-webm':
-        case 'webm-to-mp4':
-        case 'mp4-to-avi':
-        case 'avi-to-mp4':
-        case 'mov-to-mp4':
-        case 'mp4-to-mov':
-        case 'mkv-to-mp4':
-        case 'mp4-to-mkv':
-        case 'flv-to-mp4':
-        case 'wmv-to-mp4':
-        case 'video-to-mp4':
-          outputBlob = await convertVideo(files[0], conversion.to, options);
-          break;
-        case 'mp3-to-wav':
-        case 'wav-to-mp3':
-        case 'mp3-to-ogg':
-        case 'ogg-to-mp3':
-        case 'mp3-to-m4a':
-        case 'm4a-to-mp3':
-        case 'flac-to-mp3':
-        case 'mp3-to-flac':
-        case 'aac-to-mp3':
-        case 'mp3-to-aac':
-        case 'wma-to-mp3':
-        case 'mp3-to-wma':
-        case 'audio-to-mp3':
-          outputBlob = await convertAudio(files[0], conversion.to, options);
-          break;
-        case 'video-to-mp3':
-          outputBlob = await videoToAudio(files[0], 'mp3');
-          break;
-        case 'video-to-gif':
-          outputBlob = await videoToGIF(files[0]);
-          break;
-        case 'trim-video':
-          if (options.startTime !== undefined && options.endTime !== undefined) {
-            outputBlob = await trimVideo(files[0], options.startTime, options.endTime);
-          }
-          break;
-        case 'compress-video':
-          outputBlob = await compressVideo(files[0], options.quality);
-          break;
-        case 'video-to-frames':
-          outputBlobs = await videoToFrames(files[0], options.fps);
-          break;
-        case 'trim-audio':
-          if (options.startTime !== undefined && options.endTime !== undefined) {
-            outputBlob = await trimAudio(files[0], options.startTime, options.endTime);
-          }
-          break;
+        // Removed video/audio conversions - not supported in browser
 
         // Document conversions
         case 'docx-to-pdf':
@@ -981,42 +860,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
 
         // Removed: pdf-password case (not supported client-side)
 
-        // Video enhancement cases
-        case 'video-add-audio':
-          // For now, just return the original video
-          outputBlob = files[0];
-          break;
-
-        case 'video-mute':
-          // For now, just return the original video
-          outputBlob = files[0];
-          break;
-
-        case 'video-reverse':
-          // For now, just return the original video
-          outputBlob = files[0];
-          break;
-
-        case 'video-loop':
-          // For now, just return the original video
-          outputBlob = files[0];
-          break;
-
-        // Audio enhancement cases
-        case 'audio-merge':
-          // For now, just return the first audio file
-          outputBlob = files[0];
-          break;
-
-        case 'audio-normalize':
-          // For now, just return the original audio
-          outputBlob = files[0];
-          break;
-
-        case 'audio-fade':
-          // For now, just return the original audio
-          outputBlob = files[0];
-          break;
+        // Removed video/audio enhancement cases - not supported in browser
 
         // Code formatting cases
         case 'minify-css':
@@ -1088,54 +932,8 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           outputBlob = await convertImage(files[0], conversion.to, options);
           break;
 
-        // Audio format conversions (add after existing audio cases)
-        case 'flac-to-wav':
-        case 'flac-to-mp3':
-        case 'flac-to-ogg':
-        case 'flac-to-aac':
-        case 'flac-to-wma':
-        case 'wav-to-flac':
-        case 'wav-to-aac':
-        case 'wav-to-wma':
-        case 'wav-to-ogg':
-        case 'aac-to-wav':
-        case 'aac-to-mp3':
-        case 'aac-to-flac':
-        case 'aac-to-ogg':
-        case 'aac-to-wma':
-        case 'wma-to-wav':
-        case 'wma-to-mp3':
-        case 'wma-to-flac':
-        case 'wma-to-ogg':
-        case 'wma-to-aac':
-        case 'ogg-to-wav':
-        case 'ogg-to-flac':
-        case 'ogg-to-aac':
-        case 'ogg-to-wma':
-          outputBlob = await convertAudio(files[0], conversion.to, options);
-          break;
-
-        // Video format conversions (add after existing video cases)
-        case 'flv-to-webm':
-        case 'flv-to-mp4':
-        case 'flv-to-avi':
-        case 'wmv-to-webm':
-        case 'wmv-to-mp4':
-        case 'mkv-to-webm':
-        case 'mkv-to-mp4':
-        case 'mkv-to-avi':
-        case 'mkv-to-mov':
-        case 'webm-to-avi':
-        case 'webm-to-mov':
-        case 'webm-to-mkv':
-        case 'webm-to-flv':
-        case 'webm-to-wmv':
-        case 'mov-to-avi':
-        case 'mov-to-mkv':
-        case 'avi-to-mov':
-        case 'avi-to-mkv':
-          outputBlob = await convertVideo(files[0], conversion.to, options);
-          break;
+        // Removed audio format conversions - not supported in browser
+        // Removed remaining audio/video format conversions - not supported in browser
 
         // Document conversions
         case 'pdf-to-text':
@@ -1391,7 +1189,7 @@ Note: For best results, copy each slide content into PowerPoint manually.`;
           const simplePdfBuffer = await files[0].arrayBuffer();
           const simplePdfDoc = await PDFDocument.load(simplePdfBuffer);
           const simpleBytes = await simplePdfDoc.save();
-          outputBlob = new Blob([simpleBytes], { type: 'application/pdf' });
+          outputBlob = new Blob([simpleBytes.buffer], { type: 'application/pdf' });
           alert('Note: Advanced PDF manipulation is limited in browser. PDF structure preserved.');
           break;
         case 'webp-to-pdf':

@@ -8,7 +8,7 @@ export default function AllToolsPage() {
     <div className="max-w-7xl mx-auto space-y-12">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">All Conversion Tools</h1>
-        <p className="text-lg text-gray-600">Browse all 185+ conversion tools organized by category</p>
+        <p className="text-lg text-gray-600">Browse all 198+ conversion tools organized by category</p>
       </div>
 
       {categories.map((category) => {

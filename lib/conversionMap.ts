@@ -19,7 +19,6 @@ export const conversions: ConversionType[] = [
   { id: 'create-ico', name: 'Create ICO', from: 'image', to: 'ico', category: 'image', description: 'Create ICO icon from image' },
   { id: 'tiff-to-jpg', name: 'TIFF to JPG', from: 'tiff', to: 'jpg', category: 'image', description: 'Convert TIFF to JPG format' },
   { id: 'tiff-to-png', name: 'TIFF to PNG', from: 'tiff', to: 'png', category: 'image', description: 'Convert TIFF to PNG format' },
-  { id: 'gif-to-mp4', name: 'GIF to MP4', from: 'gif', to: 'mp4', category: 'image', description: 'Convert animated GIF to MP4 video' },
   { id: 'rotate-image', name: 'Rotate Image', from: 'image', to: 'image', category: 'image', description: 'Rotate images by 90, 180, or 270 degrees' },
   { id: 'flip-image', name: 'Flip Image', from: 'image', to: 'image', category: 'image', description: 'Flip images horizontally or vertically' },
 
@@ -40,7 +39,6 @@ export const conversions: ConversionType[] = [
   { id: 'excel-to-pdf', name: 'Excel to PDF', from: 'xlsx', to: 'pdf', category: 'pdf', description: 'Convert Excel to PDF' },
   { id: 'powerpoint-to-pdf', name: 'PowerPoint to PDF', from: 'pptx', to: 'pdf', category: 'pdf', description: 'Convert PowerPoint to PDF' },
   { id: 'pdf-to-excel', name: 'PDF to Excel', from: 'pdf', to: 'xlsx', category: 'pdf', description: 'Convert PDF tables to Excel' },
-  // Removed non-implemented: pdf-to-powerpoint
   { id: 'pdf-to-csv', name: 'PDF to CSV', from: 'pdf', to: 'csv', category: 'pdf', description: 'Extract tables from PDF to CSV' },
   { id: 'pdf-to-html', name: 'PDF to HTML', from: 'pdf', to: 'html', category: 'pdf', description: 'Convert PDF to HTML' },
   { id: 'pdf-to-epub', name: 'PDF to EPUB', from: 'pdf', to: 'epub', category: 'pdf', description: 'Convert PDF to EPUB ebook' },
@@ -66,40 +64,6 @@ export const conversions: ConversionType[] = [
   { id: 'fb2-to-pdf', name: 'FB2 to PDF', from: 'fb2', to: 'pdf', category: 'document', description: 'Convert FB2 ebook to PDF' },
   { id: 'doc-to-docx', name: 'DOC to DOCX', from: 'doc', to: 'docx', category: 'document', description: 'Convert old Word format to new format' },
   { id: 'docx-to-doc', name: 'DOCX to DOC', from: 'docx', to: 'doc', category: 'document', description: 'Convert new Word format to old format' },
-
-  // AUDIO CONVERSIONS (15+)
-  { id: 'mp3-to-wav', name: 'MP3 to WAV', from: 'mp3', to: 'wav', category: 'audio', description: 'Convert MP3 to WAV format' },
-  { id: 'wav-to-mp3', name: 'WAV to MP3', from: 'wav', to: 'mp3', category: 'audio', description: 'Convert WAV to MP3 format' },
-  { id: 'mp3-to-ogg', name: 'MP3 to OGG', from: 'mp3', to: 'ogg', category: 'audio', description: 'Convert MP3 to OGG format' },
-  { id: 'ogg-to-mp3', name: 'OGG to MP3', from: 'ogg', to: 'mp3', category: 'audio', description: 'Convert OGG to MP3 format' },
-  { id: 'mp3-to-m4a', name: 'MP3 to M4A', from: 'mp3', to: 'm4a', category: 'audio', description: 'Convert MP3 to M4A format' },
-  { id: 'm4a-to-mp3', name: 'M4A to MP3', from: 'm4a', to: 'mp3', category: 'audio', description: 'Convert M4A to MP3 format' },
-  { id: 'video-to-mp3', name: 'Video to MP3', from: 'video', to: 'mp3', category: 'audio', description: 'Extract audio from video', popular: true },
-  { id: 'trim-audio', name: 'Trim Audio', from: 'audio', to: 'audio', category: 'audio', description: 'Cut audio files' },
-  { id: 'flac-to-mp3', name: 'FLAC to MP3', from: 'flac', to: 'mp3', category: 'audio', description: 'Convert FLAC to MP3 format' },
-  { id: 'mp3-to-flac', name: 'MP3 to FLAC', from: 'mp3', to: 'flac', category: 'audio', description: 'Convert MP3 to FLAC format' },
-  { id: 'aac-to-mp3', name: 'AAC to MP3', from: 'aac', to: 'mp3', category: 'audio', description: 'Convert AAC to MP3 format' },
-  { id: 'mp3-to-aac', name: 'MP3 to AAC', from: 'mp3', to: 'aac', category: 'audio', description: 'Convert MP3 to AAC format' },
-  { id: 'wma-to-mp3', name: 'WMA to MP3', from: 'wma', to: 'mp3', category: 'audio', description: 'Convert WMA to MP3 format' },
-  { id: 'mp3-to-wma', name: 'MP3 to WMA', from: 'mp3', to: 'wma', category: 'audio', description: 'Convert MP3 to WMA format' },
-  { id: 'audio-to-mp3', name: 'Audio to MP3', from: 'audio', to: 'mp3', category: 'audio', description: 'Convert any audio format to MP3' },
-
-  // VIDEO CONVERSIONS (15+)
-  { id: 'mp4-to-webm', name: 'MP4 to WEBM', from: 'mp4', to: 'webm', category: 'video', description: 'Convert MP4 to WEBM format' },
-  { id: 'webm-to-mp4', name: 'WEBM to MP4', from: 'webm', to: 'mp4', category: 'video', description: 'Convert WEBM to MP4 format' },
-  { id: 'mp4-to-avi', name: 'MP4 to AVI', from: 'mp4', to: 'avi', category: 'video', description: 'Convert MP4 to AVI format' },
-  { id: 'avi-to-mp4', name: 'AVI to MP4', from: 'avi', to: 'mp4', category: 'video', description: 'Convert AVI to MP4 format' },
-  { id: 'mov-to-mp4', name: 'MOV to MP4', from: 'mov', to: 'mp4', category: 'video', description: 'Convert MOV to MP4 format' },
-  { id: 'mp4-to-mov', name: 'MP4 to MOV', from: 'mp4', to: 'mov', category: 'video', description: 'Convert MP4 to MOV format' },
-  { id: 'video-to-gif', name: 'Video to GIF', from: 'video', to: 'gif', category: 'video', description: 'Create GIF from video', popular: true },
-  { id: 'compress-video', name: 'Compress Video', from: 'video', to: 'video', category: 'video', description: 'Reduce video file size' },
-  { id: 'trim-video', name: 'Trim Video', from: 'video', to: 'video', category: 'video', description: 'Cut video files' },
-  { id: 'video-to-frames', name: 'Video to Frames', from: 'video', to: 'images', category: 'video', description: 'Extract frames from video' },
-  { id: 'mkv-to-mp4', name: 'MKV to MP4', from: 'mkv', to: 'mp4', category: 'video', description: 'Convert MKV to MP4 format' },
-  { id: 'mp4-to-mkv', name: 'MP4 to MKV', from: 'mp4', to: 'mkv', category: 'video', description: 'Convert MP4 to MKV format' },
-  { id: 'flv-to-mp4', name: 'FLV to MP4', from: 'flv', to: 'mp4', category: 'video', description: 'Convert FLV to MP4 format' },
-  { id: 'wmv-to-mp4', name: 'WMV to MP4', from: 'wmv', to: 'mp4', category: 'video', description: 'Convert WMV to MP4 format' },
-  { id: 'video-to-mp4', name: 'Video to MP4', from: 'video', to: 'mp4', category: 'video', description: 'Convert any video format to MP4' },
 
   // DATA CONVERSIONS (20+)
   { id: 'csv-to-json', name: 'CSV to JSON', from: 'csv', to: 'json', category: 'data', description: 'Convert CSV to JSON format' },
@@ -140,8 +104,6 @@ export const conversions: ConversionType[] = [
   { id: 'svg-to-png', name: 'SVG to PNG', from: 'svg', to: 'png', category: 'utility', description: 'Convert SVG to PNG' },
   { id: 'svg-to-jpg', name: 'SVG to JPG', from: 'svg', to: 'jpg', category: 'utility', description: 'Convert SVG to JPG' },
   { id: 'svg-to-pdf', name: 'SVG to PDF', from: 'svg', to: 'pdf', category: 'utility', description: 'Convert SVG to PDF' },
-  { id: 'text-to-speech', name: 'Text to Speech', from: 'text', to: 'audio', category: 'utility', description: 'Convert text to speech audio' },
-  { id: 'speech-to-text', name: 'Speech to Text', from: 'audio', to: 'text', category: 'utility', description: 'Convert speech to text' },
   { id: 'color-picker', name: 'Color Picker', from: 'image', to: 'color', category: 'utility', description: 'Extract colors from images' },
   { id: 'color-palette', name: 'Color Palette', from: 'image', to: 'color', category: 'utility', description: 'Extract color palette from images' },
   { id: 'image-to-ascii', name: 'Image to ASCII', from: 'image', to: 'text', category: 'utility', description: 'Convert images to ASCII art' },
@@ -169,7 +131,6 @@ export const conversions: ConversionType[] = [
   { id: 'image-brightness', name: 'Adjust Brightness', from: 'image', to: 'image', category: 'image', description: 'Make image brighter or darker' },
 
   // PDF UTILITIES (5 new)
-  // Removed non-implemented/duplicate: pdf-add-page-numbers, pdf-reverse-pages, pdf-extract-pages
   { id: 'pdf-remove-pages', name: 'Remove Specific Pages', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Remove specific pages from PDF' },
   { id: 'images-to-pdf-merge', name: 'Images to Single PDF', from: 'images', to: 'pdf', category: 'pdf', description: 'Combine multiple images into one PDF' },
 
@@ -195,20 +156,7 @@ export const conversions: ConversionType[] = [
   { id: 'image-pixelate', name: 'Pixelate Image', from: 'image', to: 'image', category: 'image', description: 'Apply pixelation effect' },
 
   // PDF ENHANCEMENTS (4 new)
-  // Removed duplicates: pdf-to-word, pdf-to-excel (kept earlier definitions)
   { id: 'pdf-add-watermark', name: 'Add Watermark to PDF', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Add text watermark to PDF pages' },
-  // Removed: pdf-password (pdf-lib doesn't support password protection client-side)
-
-  // VIDEO ENHANCEMENTS (4 new)
-  { id: 'video-add-audio', name: 'Add Audio to Video', from: 'video', to: 'video', category: 'video', description: 'Combine video with audio track' },
-  { id: 'video-mute', name: 'Remove Audio from Video', from: 'video', to: 'video', category: 'video', description: 'Remove audio track from video' },
-  { id: 'video-reverse', name: 'Reverse Video', from: 'video', to: 'video', category: 'video', description: 'Play video in reverse' },
-  { id: 'video-loop', name: 'Loop Video', from: 'video', to: 'video', category: 'video', description: 'Create looping video' },
-
-  // AUDIO ENHANCEMENTS (3 new)
-  { id: 'audio-merge', name: 'Merge Audio Files', from: 'audio', to: 'audio', category: 'audio', description: 'Combine multiple audio files' },
-  { id: 'audio-normalize', name: 'Normalize Audio', from: 'audio', to: 'audio', category: 'audio', description: 'Normalize audio volume' },
-  { id: 'audio-fade', name: 'Audio Fade In/Out', from: 'audio', to: 'audio', category: 'audio', description: 'Add fade effects to audio' },
 
   // TEXT & CODE (4 new)
   { id: 'minify-css', name: 'Minify CSS', from: 'css', to: 'css', category: 'utility', description: 'Minify CSS code' },
@@ -230,45 +178,6 @@ export const conversions: ConversionType[] = [
   { id: 'tiff-to-webp', name: 'TIFF to WEBP', from: 'tiff', to: 'webp', category: 'image', description: 'Convert TIFF to WEBP format' },
   { id: 'webp-to-tiff', name: 'WEBP to TIFF', from: 'webp', to: 'tiff', category: 'image', description: 'Convert WEBP to TIFF format' },
   { id: 'tiff-to-bmp', name: 'TIFF to BMP', from: 'tiff', to: 'bmp', category: 'image', description: 'Convert TIFF to BMP format' },
-
-  // ADDITIONAL AUDIO FORMATS (20 new)
-  { id: 'flac-to-wav', name: 'FLAC to WAV', from: 'flac', to: 'wav', category: 'audio', description: 'Convert FLAC to WAV format' },
-  { id: 'wav-to-flac', name: 'WAV to FLAC', from: 'wav', to: 'flac', category: 'audio', description: 'Convert WAV to FLAC format' },
-  { id: 'aac-to-wav', name: 'AAC to WAV', from: 'aac', to: 'wav', category: 'audio', description: 'Convert AAC to WAV format' },
-  { id: 'wav-to-aac', name: 'WAV to AAC', from: 'wav', to: 'aac', category: 'audio', description: 'Convert WAV to AAC format' },
-  { id: 'wma-to-wav', name: 'WMA to WAV', from: 'wma', to: 'wav', category: 'audio', description: 'Convert WMA to WAV format' },
-  { id: 'wav-to-wma', name: 'WAV to WMA', from: 'wav', to: 'wma', category: 'audio', description: 'Convert WAV to WMA format' },
-  { id: 'ogg-to-wav', name: 'OGG to WAV', from: 'ogg', to: 'wav', category: 'audio', description: 'Convert OGG to WAV format' },
-  { id: 'wav-to-ogg', name: 'WAV to OGG', from: 'wav', to: 'ogg', category: 'audio', description: 'Convert WAV to OGG format' },
-  { id: 'flac-to-ogg', name: 'FLAC to OGG', from: 'flac', to: 'ogg', category: 'audio', description: 'Convert FLAC to OGG format' },
-  { id: 'ogg-to-flac', name: 'OGG to FLAC', from: 'ogg', to: 'flac', category: 'audio', description: 'Convert OGG to FLAC format' },
-  { id: 'aac-to-flac', name: 'AAC to FLAC', from: 'aac', to: 'flac', category: 'audio', description: 'Convert AAC to FLAC format' },
-  { id: 'flac-to-aac', name: 'FLAC to AAC', from: 'flac', to: 'aac', category: 'audio', description: 'Convert FLAC to AAC format' },
-  { id: 'wma-to-flac', name: 'WMA to FLAC', from: 'wma', to: 'flac', category: 'audio', description: 'Convert WMA to FLAC format' },
-  { id: 'flac-to-wma', name: 'FLAC to WMA', from: 'flac', to: 'wma', category: 'audio', description: 'Convert FLAC to WMA format' },
-  { id: 'aac-to-ogg', name: 'AAC to OGG', from: 'aac', to: 'ogg', category: 'audio', description: 'Convert AAC to OGG format' },
-  { id: 'ogg-to-aac', name: 'OGG to AAC', from: 'ogg', to: 'aac', category: 'audio', description: 'Convert OGG to AAC format' },
-  { id: 'wma-to-ogg', name: 'WMA to OGG', from: 'wma', to: 'ogg', category: 'audio', description: 'Convert WMA to OGG format' },
-  { id: 'ogg-to-wma', name: 'OGG to WMA', from: 'ogg', to: 'wma', category: 'audio', description: 'Convert OGG to WMA format' },
-  { id: 'aac-to-wma', name: 'AAC to WMA', from: 'aac', to: 'wma', category: 'audio', description: 'Convert AAC to WMA format' },
-  { id: 'wma-to-aac', name: 'WMA to AAC', from: 'wma', to: 'aac', category: 'audio', description: 'Convert WMA to AAC format' },
-
-  // ADDITIONAL VIDEO FORMATS (15 new)
-  { id: 'flv-to-webm', name: 'FLV to WEBM', from: 'flv', to: 'webm', category: 'video', description: 'Convert FLV to WEBM format' },
-  { id: 'wmv-to-webm', name: 'WMV to WEBM', from: 'wmv', to: 'webm', category: 'video', description: 'Convert WMV to WEBM format' },
-  { id: 'mkv-to-webm', name: 'MKV to WEBM', from: 'mkv', to: 'webm', category: 'video', description: 'Convert MKV to WEBM format' },
-  { id: 'webm-to-avi', name: 'WEBM to AVI', from: 'webm', to: 'avi', category: 'video', description: 'Convert WEBM to AVI format' },
-  { id: 'webm-to-mov', name: 'WEBM to MOV', from: 'webm', to: 'mov', category: 'video', description: 'Convert WEBM to MOV format' },
-  { id: 'webm-to-mkv', name: 'WEBM to MKV', from: 'webm', to: 'mkv', category: 'video', description: 'Convert WEBM to MKV format' },
-  { id: 'webm-to-flv', name: 'WEBM to FLV', from: 'webm', to: 'flv', category: 'video', description: 'Convert WEBM to FLV format' },
-  { id: 'webm-to-wmv', name: 'WEBM to WMV', from: 'webm', to: 'wmv', category: 'video', description: 'Convert WEBM to WMV format' },
-  { id: 'mov-to-avi', name: 'MOV to AVI', from: 'mov', to: 'avi', category: 'video', description: 'Convert MOV to AVI format' },
-  { id: 'avi-to-mov', name: 'AVI to MOV', from: 'avi', to: 'mov', category: 'video', description: 'Convert AVI to MOV format' },
-  { id: 'mov-to-mkv', name: 'MOV to MKV', from: 'mov', to: 'mkv', category: 'video', description: 'Convert MOV to MKV format' },
-  { id: 'mkv-to-mov', name: 'MKV to MOV', from: 'mkv', to: 'mov', category: 'video', description: 'Convert MKV to MOV format' },
-  { id: 'avi-to-mkv', name: 'AVI to MKV', from: 'avi', to: 'mkv', category: 'video', description: 'Convert AVI to MKV format' },
-  { id: 'mkv-to-avi', name: 'MKV to AVI', from: 'mkv', to: 'avi', category: 'video', description: 'Convert MKV to AVI format' },
-  { id: 'flv-to-avi', name: 'FLV to AVI', from: 'flv', to: 'avi', category: 'video', description: 'Convert FLV to AVI format' },
 
   // DOCUMENT FORMAT EXPANSIONS (10 new)
   { id: 'odt-to-pdf', name: 'ODT to PDF', from: 'odt', to: 'pdf', category: 'document', description: 'Convert OpenDocument to PDF' },
@@ -294,8 +203,6 @@ export const conversions: ConversionType[] = [
   { id: 'csv-to-xls', name: 'CSV to XLS', from: 'csv', to: 'xls', category: 'data', description: 'Convert CSV to old Excel format' },
 
   // ADDITIONAL PDF TOOLS (15 new)
-  { id: 'pdf-to-html', name: 'PDF to HTML', from: 'pdf', to: 'html', category: 'pdf', description: 'Convert PDF to HTML format' },
-  // Removed duplicate of images-to-pdf-merge: images-to-pdf-single
   { id: 'pdf-grayscale', name: 'Convert PDF to Grayscale', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Remove colors from PDF' },
   { id: 'pdf-crop', name: 'Crop PDF Pages', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Crop margins from PDF pages' },
   { id: 'pdf-resize', name: 'Resize PDF Pages', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Change PDF page dimensions' },
@@ -309,7 +216,6 @@ export const conversions: ConversionType[] = [
   { id: 'svg-to-pdf-direct', name: 'SVG to PDF', from: 'svg', to: 'pdf', category: 'pdf', description: 'Convert SVG graphics to PDF' },
 
   // ADDITIONAL TEXT/CODE UTILITIES (15 new)
-  { id: 'text-to-speech', name: 'Text to Speech', from: 'text', to: 'audio', category: 'utility', description: 'Convert text to spoken audio' },
   { id: 'character-counter', name: 'Character Counter', from: 'text', to: 'analysis', category: 'utility', description: 'Count characters with/without spaces' },
   { id: 'line-counter', name: 'Line Counter', from: 'text', to: 'analysis', category: 'utility', description: 'Count lines in text' },
   { id: 'remove-line-breaks', name: 'Remove Line Breaks', from: 'text', to: 'text', category: 'utility', description: 'Remove all line breaks from text' },
@@ -329,8 +235,6 @@ export const conversions: ConversionType[] = [
 export const categories = [
   { id: 'image', name: 'Image Tools', icon: '🖼️', description: 'Convert and optimize images' },
   { id: 'pdf', name: 'PDF Tools', icon: '📄', description: 'PDF conversion and manipulation' },
-  { id: 'video', name: 'Video Tools', icon: '🎥', description: 'Video format conversions' },
-  { id: 'audio', name: 'Audio Tools', icon: '🎵', description: 'Audio format conversions' },
   { id: 'document', name: 'Document Tools', icon: '📝', description: 'Document conversions' },
   { id: 'data', name: 'Data Tools', icon: '📊', description: 'Data format conversions' },
   { id: 'archive', name: 'Archive Tools', icon: '📦', description: 'Compression and archives' },
@@ -348,4 +252,3 @@ export function getPopularConversions(): ConversionType[] {
 export function getConversionsByCategory(category: string): ConversionType[] {
   return conversions.filter(c => c.category === category);
 }
-
