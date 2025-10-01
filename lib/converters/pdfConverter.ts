@@ -388,13 +388,83 @@ export async function pdfToText(file: File): Promise<Blob> {
   return new Blob([textContent], { type: 'text/plain' });
 }
 
-// Simple and reliable PDF to Word conversion
+// Professional PDF to Word conversion that preserves exact visual layout
 export async function pdfToWord(file: File): Promise<Blob> {
   try {
-    // Get clean text from PDF
-    const textContent = await extractTextFromPDF(file);
+    // Dynamic import to avoid SSR issues
+    const pdfjsLib = await import('pdfjs-dist');
+    const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType } = await import('docx');
+
+    // Set up the worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({
+      data: arrayBuffer,
+      disableFontFace: true,
+    });
+
+    const pdf = await loadingTask.promise;
+    const paragraphs: any[] = [];
+
+    // Process each page
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better quality
+
+      // Render the entire page as a high-quality image
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d')!;
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      await page.render({ canvasContext: context, viewport }).promise;
+
+      // Convert canvas to base64 for embedding
+      const imageDataUrl = canvas.toDataURL('image/png', 0.95);
+
+      // Add the page image to Word document
+      paragraphs.push(new Paragraph({
+        children: [new ImageRun({
+          data: imageDataUrl,
+          transformation: {
+            width: Math.min(600, canvas.width), // Max width of 600px
+            height: (Math.min(600, canvas.width) * canvas.height) / canvas.width,
+          },
+        })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 400 }
+      }));
+
+      // Add page number
+      paragraphs.push(new Paragraph({
+        children: [new TextRun({
+          text: `Page ${pageNum}`,
+          bold: true,
+          size: 16,
+          color: "666666"
+        })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 600 }
+      }));
+    }
+
+    // Create Word document with embedded page images
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: paragraphs
+      }]
+    });
+
+    return await Packer.toBlob(doc);
+  } catch (error) {
+    console.error('PDF to Word error:', error);
     
-    // Clean up the text
+    // Fallback to text-only conversion
+    const textContent = await extractTextFromPDF(file);
+    const { Document, Packer, Paragraph, TextRun } = await import('docx');
+    
     const cleanText = textContent
       .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
       .replace(/\s+-\s+/g, '-')
@@ -403,12 +473,7 @@ export async function pdfToWord(file: File): Promise<Blob> {
       .replace(/\s+!\s+/g, '! ')
       .trim();
 
-    // Split into lines and create simple paragraphs
     const lines = cleanText.split('\n').filter(line => line.trim().length > 0);
-    
-    // Dynamic import to avoid SSR issues
-    const { Document, Packer, Paragraph, TextRun } = await import('docx');
-    
     const paragraphs = lines.map(line => {
       const text = line.trim();
       let isBold = false;
@@ -430,7 +495,6 @@ export async function pdfToWord(file: File): Promise<Blob> {
       });
     });
 
-    // Create the simplest possible Word document
     const doc = new Document({
       sections: [{
         properties: {},
@@ -439,25 +503,6 @@ export async function pdfToWord(file: File): Promise<Blob> {
     });
 
     return await Packer.toBlob(doc);
-  } catch (error) {
-    console.error('PDF to Word error:', error);
-    
-    // Ultimate fallback - create a basic text file
-    const textContent = await extractTextFromPDF(file);
-    const cleanText = textContent
-      .replace(/\bo\s+/g, '')
-      .replace(/\s+-\s+/g, '-')
-      .replace(/\s+/g, ' ')
-      .replace(/\s+\.\s+/g, '. ')
-      .replace(/\s+!\s+/g, '! ')
-      .trim();
-    
-    // Create a simple RTF file instead
-    const rtfContent = `{\\rtf1\\ansi\\deff0
-${cleanText.split('\n').map(line => `{\\b ${line.trim()}}\\par`).join('\n')}
-}`;
-    
-    return new Blob([rtfContent], { type: 'application/rtf' });
   }
 }
 
