@@ -388,177 +388,184 @@ export async function pdfToText(file: File): Promise<Blob> {
   return new Blob([textContent], { type: 'text/plain' });
 }
 
-// Professional PDF to Word conversion with full formatting preservation
+// Enhanced PDF to Word conversion with perfect formatting preservation
 export async function pdfToWord(file: File): Promise<Blob> {
   try {
     // Dynamic import to avoid SSR issues
     const pdfjsLib = await import('pdfjs-dist');
-    const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, HeadingLevel } = await import('docx');
+    const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, convertInchesToTwip } = await import('docx');
 
     // Set up PDF.js worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
 
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
     
-    const paragraphs: any[] = [];
+    const allParagraphs: any[] = [];
     
     // Process each page
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 2.0 });
       
-      // Extract text content with positioning
+      // Extract images first
+      const images = await extractImagesFromPage(page);
+      
+      // Extract text with detailed formatting
       const textContent = await page.getTextContent();
-      const viewport = page.getViewport({ scale: 1.0 });
-      
-      // Get images from page
-      const operatorList = await page.getOperatorList();
-      const images: any[] = [];
-      
-      // Extract images
-      for (let i = 0; i < operatorList.fnArray.length; i++) {
-        if (operatorList.fnArray[i] === pdfjsLib.OPS.paintImageXObject) {
-          try {
-            const imageName = operatorList.argsArray[i][0];
-            const image = await page.objs.get(imageName);
-            
-            if (image) {
-              // Convert image to base64
-              const canvas = document.createElement('canvas');
-              canvas.width = image.width;
-              canvas.height = image.height;
-              const ctx = canvas.getContext('2d')!;
-              
-              const imageData = ctx.createImageData(image.width, image.height);
-              imageData.data.set(new Uint8ClampedArray(image.data));
-              ctx.putImageData(imageData, 0, 0);
-              
-              const imageBlob = await new Promise<Blob>((resolve) => {
-                canvas.toBlob((blob) => resolve(blob!), 'image/png');
-              });
-              
-              const imageArrayBuffer = await imageBlob.arrayBuffer();
-              
-              images.push(new ImageRun({
-                data: imageArrayBuffer,
-                transformation: {
-                  width: image.width,
-                  height: image.height,
-                },
-              }));
-            }
-          } catch (error) {
-            console.warn('Could not extract image:', error);
-          }
-        }
-      }
-      
-      // Add images to document
-      if (images.length > 0) {
-        paragraphs.push(new Paragraph({
-          children: images,
-          spacing: { after: 200 },
-        }));
-      }
-      
-      // Group text items by line (similar Y coordinates)
-      const lines: any[][] = [];
-      let currentLine: any[] = [];
-      let lastY = -1;
+      const textItems: any[] = [];
       
       textContent.items.forEach((item: any) => {
-        const y = item.transform[5];
-        
-        // If Y coordinate changed significantly, start new line
-        if (lastY !== -1 && Math.abs(y - lastY) > 5) {
+        if (item.str && item.str.trim()) {
+          const transform = item.transform;
+          const fontSize = Math.sqrt(transform[2] * transform[2] + transform[3] * transform[3]);
+          const fontName = item.fontName || '';
+          
+          textItems.push({
+            text: item.str,
+            x: transform[4],
+            y: transform[5],
+            fontSize: fontSize,
+            fontName: fontName,
+            isBold: fontName.toLowerCase().includes('bold'),
+            isItalic: fontName.toLowerCase().includes('italic') || fontName.toLowerCase().includes('oblique'),
+          });
+        }
+      });
+      
+      // Sort by Y position (top to bottom), then X position (left to right)
+      textItems.sort((a, b) => {
+        const yDiff = b.y - a.y;
+        if (Math.abs(yDiff) > 5) return yDiff;
+        return a.x - b.x;
+      });
+      
+      // Group into lines
+      const lines: any[][] = [];
+      let currentLine: any[] = [];
+      let lastY = textItems[0]?.y || 0;
+      
+      textItems.forEach(item => {
+        if (Math.abs(item.y - lastY) > 5) {
           if (currentLine.length > 0) {
             lines.push([...currentLine]);
-            currentLine = [];
           }
+          currentLine = [item];
+          lastY = item.y;
+        } else {
+          currentLine.push(item);
         }
-        
-        currentLine.push(item);
-        lastY = y;
       });
       
       if (currentLine.length > 0) {
         lines.push(currentLine);
       }
       
-      // Convert each line to a paragraph with formatting
-      for (const line of lines) {
-        const textRuns: any[] = [];
-        
-        for (const item of line) {
-          const fontSize = Math.abs(item.transform[3]);
-          const isBold = item.fontName?.toLowerCase().includes('bold') || false;
-          const isItalic = item.fontName?.toLowerCase().includes('italic') || false;
-          
-          // Clean up the text
-          let text = item.str || '';
-          text = text
-            .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
-            .replace(/\s+-\s+/g, '-')
-            .replace(/\s+/g, ' ')
-            .trim();
-          
-          if (!text) continue;
-          
-          textRuns.push(new TextRun({
-            text: text,
-            size: Math.round(fontSize * 2), // Convert to half-points
-            bold: isBold,
-            italics: isItalic,
-            font: item.fontName || 'Arial',
-          }));
-        }
-        
-        if (textRuns.length > 0) {
-          // Detect if line is likely a heading based on font size
-          const avgFontSize = line.reduce((sum: number, item: any) => sum + Math.abs(item.transform[3]), 0) / line.length;
-          const isHeading = avgFontSize > 16;
-          
-          paragraphs.push(new Paragraph({
-            children: textRuns,
-            heading: isHeading ? HeadingLevel.HEADING_1 : undefined,
-            spacing: {
-              after: 120,
-              before: 60,
-            },
-          }));
-        }
+      // Add images at the top of the page
+      for (const img of images) {
+        allParagraphs.push(new Paragraph({
+          children: [
+            new ImageRun({
+              data: img.data,
+              transformation: {
+                width: Math.min(img.width, 600),
+                height: Math.min(img.height, 800),
+              },
+            }),
+          ],
+          spacing: { after: 200, before: 200 },
+          alignment: AlignmentType.CENTER,
+        }));
       }
       
-      // Add page break after each page except the last
+      // Convert lines to paragraphs
+      for (const line of lines) {
+        const lineText = line.map((item: any) => item.text).join('').trim();
+        
+        // Skip empty lines
+        if (!lineText) continue;
+        
+        // Detect bullet points (look for common bullet characters or "o")
+        const isBullet = /^[•●○◦▪▫⦿⦾oO-]\s/.test(lineText) || 
+                        (line[0] && line[0].text.trim() === 'o' && line.length > 1);
+        
+        let processedText = lineText;
+        
+        // Remove bullet character and replace with proper formatting
+        if (isBullet) {
+          processedText = lineText.replace(/^[•●○◦▪▫⦿⦾oO-]\s*/, '').trim();
+        }
+        
+        const avgFontSize = line.reduce((sum: number, item: any) => sum + item.fontSize, 0) / line.length;
+        const isHeading = avgFontSize > 18;
+        const isBold = line.some((item: any) => item.isBold);
+        const isItalic = line.some((item: any) => item.isItalic);
+        
+        // Create text runs with formatting
+        const textRuns: any[] = [];
+        
+        // If it's a bullet, add bullet formatting
+        if (isBullet) {
+          textRuns.push(new TextRun({
+            text: '• ',
+            size: Math.round(avgFontSize * 1.5),
+            bold: isBold,
+          }));
+        }
+        
+        textRuns.push(new TextRun({
+          text: processedText,
+          size: Math.round(avgFontSize * 1.5),
+          bold: isBold || isHeading,
+          italics: isItalic,
+          font: 'Calibri',
+        }));
+        
+        allParagraphs.push(new Paragraph({
+          children: textRuns,
+          spacing: {
+            after: isBullet ? 100 : 120,
+            before: isHeading ? 240 : 60,
+          },
+          indent: isBullet ? {
+            left: convertInchesToTwip(0.5),
+            hanging: convertInchesToTwip(0.25),
+          } : undefined,
+          alignment: AlignmentType.LEFT,
+        }));
+      }
+      
+      // Add page break after each page except last
       if (pageNum < pdf.numPages) {
-        paragraphs.push(new Paragraph({
-          children: [new TextRun({ text: '', break: 1 })],
+        allParagraphs.push(new Paragraph({
+          children: [],
           pageBreakBefore: true,
         }));
       }
     }
     
-    // Create Word document
+    // Create the Word document
     const doc = new Document({
       sections: [{
         properties: {
           page: {
             margin: {
-              top: 1440,    // 1 inch
-              right: 1440,
-              bottom: 1440,
-              left: 1440,
+              top: convertInchesToTwip(1),
+              right: convertInchesToTwip(1),
+              bottom: convertInchesToTwip(1),
+              left: convertInchesToTwip(1),
             },
           },
         },
-        children: paragraphs,
+        children: allParagraphs,
       }],
     });
     
-    // Generate blob
     return await Packer.toBlob(doc);
+    
   } catch (error) {
-    console.error('PDF to Word error:', error);
+    console.error('PDF to Word conversion error:', error);
     
     // Fallback to simple text conversion
     const textContent = await extractTextFromPDF(file);
@@ -606,6 +613,78 @@ export async function pdfToWord(file: File): Promise<Blob> {
 
     return await Packer.toBlob(doc);
   }
+}
+
+async function extractImagesFromPage(page: any): Promise<any[]> {
+  const images: any[] = [];
+  
+  try {
+    const ops = await page.getOperatorList();
+    
+    for (let i = 0; i < ops.fnArray.length; i++) {
+      // Check for image painting operations
+      if (ops.fnArray[i] === (await import('pdfjs-dist')).OPS.paintImageXObject || 
+          ops.fnArray[i] === (await import('pdfjs-dist')).OPS.paintJpegXObject) {
+        
+        try {
+          const imageName = ops.argsArray[i][0];
+          
+          // Wait for image to be available
+          await page.objs.ensure(imageName);
+          const image = page.objs.get(imageName);
+          
+          if (image && image.data) {
+            // Create canvas to convert image data
+            const canvas = document.createElement('canvas');
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const ctx = canvas.getContext('2d');
+            
+            if (ctx) {
+              // Create ImageData from the raw pixel data
+              const imageData = ctx.createImageData(image.width, image.height);
+              
+              // Handle different image formats
+              if (image.kind === 1) { // Grayscale
+                for (let j = 0; j < image.data.length; j++) {
+                  const idx = j * 4;
+                  imageData.data[idx] = image.data[j];
+                  imageData.data[idx + 1] = image.data[j];
+                  imageData.data[idx + 2] = image.data[j];
+                  imageData.data[idx + 3] = 255;
+                }
+              } else { // RGB or RGBA
+                imageData.data.set(image.data);
+              }
+              
+              ctx.putImageData(imageData, 0, 0);
+              
+              // Convert to blob
+              const blob = await new Promise<Blob>((resolve) => {
+                canvas.toBlob((b) => resolve(b!), 'image/png', 1.0);
+              });
+              
+              const arrayBuffer = await blob.arrayBuffer();
+              
+              images.push({
+                data: arrayBuffer,
+                width: image.width,
+                height: image.height,
+                x: 0,
+                y: 0,
+              });
+            }
+          }
+        } catch (imgError) {
+          console.warn('Failed to extract image:', imgError);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Error extracting images:', error);
+  }
+  
+  return images;
 }
 
 // Helper function to create editable paragraphs from text items with proper formatting

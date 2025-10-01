@@ -1348,11 +1348,17 @@ ${slide}
         <ConversionDisclaimer conversionId={conversion.id} />
         
         {conversion.id === 'pdf-to-word' && (
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>Note:</strong> Complex PDFs with advanced formatting, tables, or special fonts may not convert perfectly. 
-              For best results, use PDFs with simple text and images. Images and basic formatting will be preserved.
-            </p>
+          <div className="mt-4 space-y-2">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>✓ Preserves:</strong> Text formatting, bold, italic, headings, images, bullet points
+              </p>
+            </div>
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>⚠ Limitations:</strong> Complex tables, form fields, and annotations may not convert perfectly
+              </p>
+            </div>
           </div>
         )}
 
