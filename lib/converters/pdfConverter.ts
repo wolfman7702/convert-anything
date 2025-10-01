@@ -388,13 +388,182 @@ export async function pdfToText(file: File): Promise<Blob> {
   return new Blob([textContent], { type: 'text/plain' });
 }
 
-// Professional PDF to Word conversion that creates properly formatted Word documents
+// Professional PDF to Word conversion with full formatting preservation
 export async function pdfToWord(file: File): Promise<Blob> {
   try {
-    // Get clean text from PDF first
-    const textContent = await extractTextFromPDF(file);
+    // Dynamic import to avoid SSR issues
+    const pdfjsLib = await import('pdfjs-dist');
+    const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, HeadingLevel } = await import('docx');
+
+    // Set up PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     
-    // Clean up the text and properly format it
+    const paragraphs: any[] = [];
+    
+    // Process each page
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      
+      // Extract text content with positioning
+      const textContent = await page.getTextContent();
+      const viewport = page.getViewport({ scale: 1.0 });
+      
+      // Get images from page
+      const operatorList = await page.getOperatorList();
+      const images: any[] = [];
+      
+      // Extract images
+      for (let i = 0; i < operatorList.fnArray.length; i++) {
+        if (operatorList.fnArray[i] === pdfjsLib.OPS.paintImageXObject) {
+          try {
+            const imageName = operatorList.argsArray[i][0];
+            const image = await page.objs.get(imageName);
+            
+            if (image) {
+              // Convert image to base64
+              const canvas = document.createElement('canvas');
+              canvas.width = image.width;
+              canvas.height = image.height;
+              const ctx = canvas.getContext('2d')!;
+              
+              const imageData = ctx.createImageData(image.width, image.height);
+              imageData.data.set(new Uint8ClampedArray(image.data));
+              ctx.putImageData(imageData, 0, 0);
+              
+              const imageBlob = await new Promise<Blob>((resolve) => {
+                canvas.toBlob((blob) => resolve(blob!), 'image/png');
+              });
+              
+              const imageArrayBuffer = await imageBlob.arrayBuffer();
+              
+              images.push(new ImageRun({
+                data: imageArrayBuffer,
+                transformation: {
+                  width: image.width,
+                  height: image.height,
+                },
+              }));
+            }
+          } catch (error) {
+            console.warn('Could not extract image:', error);
+          }
+        }
+      }
+      
+      // Add images to document
+      if (images.length > 0) {
+        paragraphs.push(new Paragraph({
+          children: images,
+          spacing: { after: 200 },
+        }));
+      }
+      
+      // Group text items by line (similar Y coordinates)
+      const lines: any[][] = [];
+      let currentLine: any[] = [];
+      let lastY = -1;
+      
+      textContent.items.forEach((item: any) => {
+        const y = item.transform[5];
+        
+        // If Y coordinate changed significantly, start new line
+        if (lastY !== -1 && Math.abs(y - lastY) > 5) {
+          if (currentLine.length > 0) {
+            lines.push([...currentLine]);
+            currentLine = [];
+          }
+        }
+        
+        currentLine.push(item);
+        lastY = y;
+      });
+      
+      if (currentLine.length > 0) {
+        lines.push(currentLine);
+      }
+      
+      // Convert each line to a paragraph with formatting
+      for (const line of lines) {
+        const textRuns: any[] = [];
+        
+        for (const item of line) {
+          const fontSize = Math.abs(item.transform[3]);
+          const isBold = item.fontName?.toLowerCase().includes('bold') || false;
+          const isItalic = item.fontName?.toLowerCase().includes('italic') || false;
+          
+          // Clean up the text
+          let text = item.str || '';
+          text = text
+            .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
+            .replace(/\s+-\s+/g, '-')
+            .replace(/\s+/g, ' ')
+            .trim();
+          
+          if (!text) continue;
+          
+          textRuns.push(new TextRun({
+            text: text,
+            size: Math.round(fontSize * 2), // Convert to half-points
+            bold: isBold,
+            italics: isItalic,
+            font: item.fontName || 'Arial',
+          }));
+        }
+        
+        if (textRuns.length > 0) {
+          // Detect if line is likely a heading based on font size
+          const avgFontSize = line.reduce((sum: number, item: any) => sum + Math.abs(item.transform[3]), 0) / line.length;
+          const isHeading = avgFontSize > 16;
+          
+          paragraphs.push(new Paragraph({
+            children: textRuns,
+            heading: isHeading ? HeadingLevel.HEADING_1 : undefined,
+            spacing: {
+              after: 120,
+              before: 60,
+            },
+          }));
+        }
+      }
+      
+      // Add page break after each page except the last
+      if (pageNum < pdf.numPages) {
+        paragraphs.push(new Paragraph({
+          children: [new TextRun({ text: '', break: 1 })],
+          pageBreakBefore: true,
+        }));
+      }
+    }
+    
+    // Create Word document
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            margin: {
+              top: 1440,    // 1 inch
+              right: 1440,
+              bottom: 1440,
+              left: 1440,
+            },
+          },
+        },
+        children: paragraphs,
+      }],
+    });
+    
+    // Generate blob
+    return await Packer.toBlob(doc);
+  } catch (error) {
+    console.error('PDF to Word error:', error);
+    
+    // Fallback to simple text conversion
+    const textContent = await extractTextFromPDF(file);
+    const { Document, Packer, Paragraph, TextRun } = await import('docx');
+    
     const cleanText = textContent
       .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
       .replace(/\s+-\s+/g, '-')
@@ -403,71 +572,31 @@ export async function pdfToWord(file: File): Promise<Blob> {
       .replace(/\s+!\s+/g, '! ')
       .trim();
 
-    // Split into lines and process them properly
     const lines = cleanText.split('\n').filter(line => line.trim().length > 0);
-    
-    // Dynamic import to avoid SSR issues
-    const { Document, Packer, Paragraph, TextRun } = await import('docx');
-    
-    const paragraphs: any[] = [];
-    
-    for (const line of lines) {
+    const paragraphs = lines.map(line => {
       const text = line.trim();
-      
-      // Skip page markers
-      if (text.startsWith('--- Page')) {
-        continue;
-      }
-      
       let isBold = false;
       let fontSize = 22;
-      let spacing = 200;
       
-      // Determine formatting based on content
-      if (text.match(/^[A-Z][A-Z\s]+$/) || text.match(/^[A-Z][a-z]+:$/)) {
-        // Headers
+      // Make headers bold
+      if (text.match(/^[A-Z][A-Z\s]+$/) || 
+          text.match(/^[A-Z][a-z]+:$/) ||
+          text.match(/^\d+\.\s/) ||
+          text.includes('Small Group Discussion:')) {
         isBold = true;
         fontSize = 24;
-        spacing = 400;
-      } else if (text.match(/^\d+\.\s/)) {
-        // Numbered sections
-        isBold = true;
-        fontSize = 26;
-        spacing = 300;
-      } else if (text.includes('Small Group Discussion:')) {
-        // Discussion sections
-        isBold = true;
-        fontSize = 24;
-        spacing = 300;
-      } else if (text.match(/^[A-Z][a-z]+\s+[A-Z][a-z]+:/)) {
-        // Section headers like "What God Knew"
-        isBold = true;
-        fontSize = 28;
-        spacing = 400;
-      } else if (text.match(/^[A-Z][a-z]+:/)) {
-        // Sub-headers like "First:", "Second:"
-        isBold = true;
-        fontSize = 22;
-        spacing = 200;
-      } else if (text.match(/^Preview:/)) {
-        // Preview sections
-        isBold = true;
-        fontSize = 22;
-        spacing = 300;
       }
       
-      // Create paragraph with proper formatting
-      paragraphs.push(new Paragraph({
+      return new Paragraph({
         children: [new TextRun({
           text: text,
           bold: isBold,
           size: fontSize
         })],
-        spacing: { after: spacing }
-      }));
-    }
+        spacing: { after: 200 }
+      });
+    });
 
-    // Create a simple, reliable Word document
     const doc = new Document({
       sections: [{
         properties: {},
@@ -476,56 +605,6 @@ export async function pdfToWord(file: File): Promise<Blob> {
     });
 
     return await Packer.toBlob(doc);
-  } catch (error) {
-    console.error('PDF to Word error:', error);
-    
-    // Ultimate fallback - create RTF file with proper formatting
-    const textContent = await extractTextFromPDF(file);
-    const cleanText = textContent
-      .replace(/\bo\s+/g, '')
-      .replace(/\s+-\s+/g, '-')
-      .replace(/\s+/g, ' ')
-      .replace(/\s+\.\s+/g, '. ')
-      .replace(/\s+!\s+/g, '! ')
-      .trim();
-    
-    // Create a properly formatted RTF file
-    const rtfLines = cleanText.split('\n').filter(line => line.trim().length > 0);
-    const rtfContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}}
-${rtfLines.map(line => {
-  const text = line.trim();
-  
-  // Skip page markers
-  if (text.startsWith('--- Page')) {
-    return '';
-  }
-  
-  let isBold = false;
-  let fontSize = 22;
-  
-  // Determine formatting
-  if (text.match(/^[A-Z][A-Z\s]+$/) || 
-      text.match(/^[A-Z][a-z]+:$/) ||
-      text.match(/^\d+\.\s/) ||
-      text.includes('Small Group Discussion:') ||
-      text.match(/^Preview:/)) {
-    isBold = true;
-    fontSize = 24;
-  }
-  
-  if (text.match(/^[A-Z][a-z]+\s+[A-Z][a-z]+:/)) {
-    isBold = true;
-    fontSize = 28;
-  }
-  
-  const fontTag = `\\fs${fontSize * 2}`; // RTF font size is in half-points
-  const boldTag = isBold ? '\\b ' : '';
-  
-  return `{${fontTag} ${boldTag}${text}}\\par\\par`;
-}).filter(line => line.length > 0).join('\n')}
-}`;
-    
-    return new Blob([rtfContent], { type: 'application/rtf' });
   }
 }
 

@@ -1346,6 +1346,15 @@ ${slide}
         <p className="text-gray-600 mb-8 text-center">{conversion.description}</p>
         
         <ConversionDisclaimer conversionId={conversion.id} />
+        
+        {conversion.id === 'pdf-to-word' && (
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              <strong>Note:</strong> Complex PDFs with advanced formatting, tables, or special fonts may not convert perfectly. 
+              For best results, use PDFs with simple text and images. Images and basic formatting will be preserved.
+            </p>
+          </div>
+        )}
 
         {!result && results.length === 0 && (
           <>
