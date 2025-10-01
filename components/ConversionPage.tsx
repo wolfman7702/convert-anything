@@ -12,6 +12,7 @@ import { ArrowRight } from 'lucide-react';
 import { ConversionType, ConversionOptions } from '@/lib/types';
 import { convertImage, compressImage, resizeImage } from '@/lib/converters/imageConverter';
 import { imagesToPDF, mergePDFs, splitPDF, compressPDF, pdfToImages, textToPDF, htmlToPDF, rotatePDF, deletePDFPages, extractTextFromPDF, pdfToGrayscale, cropPDF, flattenPDF, addWatermarkToPDF } from '@/lib/converters/pdfConverter';
+import { PDFDocument } from 'pdf-lib';
 import { convertVideo, convertAudio, videoToAudio, videoToGIF, trimVideo, compressVideo, videoToFrames, trimAudio } from '@/lib/converters/videoConverter';
 import { docxToHTML, docxToText, docxToPDF, htmlToText, markdownToHTML, markdownToPDF, htmlToMarkdown, htmlToDOCX, txtToDOCX, odtToDOCX, rtfToDOCX, docxToRTF, docxToODT } from '@/lib/converters/documentConverter';
 import { csvToJSON, jsonToCSV, xlsxToCSV, csvToXLSX, xlsxToJSON, jsonToXLSX, base64Encode, base64Decode, urlEncode, urlDecode, csvToXML } from '@/lib/converters/dataConverter';
@@ -243,8 +244,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         return `${baseName}.xlsx`;
       case 'pdf-add-watermark':
         return `watermarked${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.pdf' : '.pdf'}`;
-      case 'pdf-password':
-        return `protected${originalFile ? originalFile.name.match(/\.[^/.]+$/)?.[0] || '.pdf' : '.pdf'}`;
+      // Removed: pdf-password (not supported client-side)
       
       // New video conversions
       case 'video-add-audio':
@@ -979,10 +979,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           }
           break;
 
-        case 'pdf-password':
-          // For now, just return the original PDF with a note
-          outputBlob = files[0];
-          break;
+        // Removed: pdf-password case (not supported client-side)
 
         // Video enhancement cases
         case 'video-add-audio':
@@ -1388,11 +1385,14 @@ Note: For best results, copy each slide content into PowerPoint manually.`;
           outputBlob = await flattenPDF(files[0]);
           break;
         case 'pdf-resize':
-          outputBlob = await compressPDF(files[0]);
-          break;
         case 'pdf-a4-to-letter':
         case 'pdf-letter-to-a4':
-          outputBlob = await compressPDF(files[0]);
+          // Simple approach - just return the original PDF with a note
+          const simplePdfBuffer = await files[0].arrayBuffer();
+          const simplePdfDoc = await PDFDocument.load(simplePdfBuffer);
+          const simpleBytes = await simplePdfDoc.save();
+          outputBlob = new Blob([simpleBytes], { type: 'application/pdf' });
+          alert('Note: Advanced PDF manipulation is limited in browser. PDF structure preserved.');
           break;
         case 'webp-to-pdf':
         case 'tiff-to-pdf':

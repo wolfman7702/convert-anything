@@ -197,7 +197,7 @@ export const conversions: ConversionType[] = [
   // PDF ENHANCEMENTS (4 new)
   // Removed duplicates: pdf-to-word, pdf-to-excel (kept earlier definitions)
   { id: 'pdf-add-watermark', name: 'Add Watermark to PDF', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Add text watermark to PDF pages' },
-  { id: 'pdf-password', name: 'Password Protect PDF', from: 'pdf', to: 'pdf', category: 'pdf', description: 'Add password protection to PDF' },
+  // Removed: pdf-password (pdf-lib doesn't support password protection client-side)
 
   // VIDEO ENHANCEMENTS (4 new)
   { id: 'video-add-audio', name: 'Add Audio to Video', from: 'video', to: 'video', category: 'video', description: 'Combine video with audio track' },
@@ -216,9 +216,7 @@ export const conversions: ConversionType[] = [
   { id: 'beautify-css', name: 'Beautify CSS', from: 'css', to: 'css', category: 'utility', description: 'Format CSS code' },
   { id: 'beautify-js', name: 'Beautify JavaScript', from: 'js', to: 'js', category: 'utility', description: 'Format JavaScript code' },
 
-  // ADDITIONAL IMAGE FORMATS (15 new)
-  { id: 'tiff-to-jpg', name: 'TIFF to JPG', from: 'tiff', to: 'jpg', category: 'image', description: 'Convert TIFF to JPG format' },
-  { id: 'tiff-to-png', name: 'TIFF to PNG', from: 'tiff', to: 'png', category: 'image', description: 'Convert TIFF to PNG format' },
+  // ADDITIONAL IMAGE FORMATS (13 new)
   { id: 'jpg-to-tiff', name: 'JPG to TIFF', from: 'jpg', to: 'tiff', category: 'image', description: 'Convert JPG to TIFF format' },
   { id: 'png-to-tiff', name: 'PNG to TIFF', from: 'png', to: 'tiff', category: 'image', description: 'Convert PNG to TIFF format' },
   { id: 'gif-to-jpg', name: 'GIF to JPG', from: 'gif', to: 'jpg', category: 'image', description: 'Convert GIF to JPG format' },
