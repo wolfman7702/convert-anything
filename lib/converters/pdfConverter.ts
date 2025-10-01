@@ -1,12 +1,12 @@
 import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
 import jsPDF from 'jspdf';
 import { ConversionOptions } from '../types';
-import { initializePDFJS } from '@/lib/config/pdfConfig';
+import { setupPDFJS } from '@/lib/pdfSetup';
 
 export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Promise<Blob[]> {
   try {
     // Use centralized PDF.js initialization
-    const pdfjsLib = await initializePDFJS();
+    const pdfjsLib = await setupPDFJS();
     
   const arrayBuffer = await file.arrayBuffer();
     
@@ -232,7 +232,7 @@ export async function flattenPDF(file: File): Promise<Blob> {
 export async function extractTextFromPDF(file: File): Promise<string> {
   try {
     // Use centralized PDF.js initialization
-    const pdfjsLib = await initializePDFJS();
+    const pdfjsLib = await setupPDFJS();
     
     const arrayBuffer = await file.arrayBuffer();
     

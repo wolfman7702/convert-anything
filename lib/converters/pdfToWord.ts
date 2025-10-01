@@ -1,242 +1,136 @@
 import { Document, Paragraph, TextRun, AlignmentType, Packer, convertInchesToTwip } from 'docx';
-import { initializePDFJS } from '@/lib/config/pdfConfig';
-
-interface ExtractedText {
-  text: string;
-  y: number;
-  fontSize: number;
-  isBold: boolean;
-  isItalic: boolean;
-}
-
+import { setupPDFJS } from '@/lib/pdfSetup';
 
 export async function pdfToWord(file: File): Promise<Blob> {
-  // Ensure we're on the client side
   if (typeof window === 'undefined') {
-    throw new Error('PDF to Word conversion can only run in the browser');
+    throw new Error('This conversion only works in the browser');
   }
 
-  try {
-    // Use centralized PDF.js initialization
-    const pdfjsLib = await initializePDFJS();
+  const pdfjsLib = await setupPDFJS();
 
-    const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ 
-      data: arrayBuffer,
-      disableFontFace: true,
-      disableCreateObjectURL: true
-    });
-    const pdf = await loadingTask.promise;
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+  const pdf = await loadingTask.promise;
+  
+  const allParagraphs: Paragraph[] = [];
+  
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const textContent = await page.getTextContent();
     
-    const allParagraphs: Paragraph[] = [];
+    const textItems: any[] = [];
     
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      
-      // Extract text
-      const textContent = await page.getTextContent();
-      const textItems: ExtractedText[] = [];
-      
-      for (const item of textContent.items) {
-        const textItem = item as any;
-        if (textItem.str && textItem.str.trim()) {
-          const transform = textItem.transform;
-          const fontSize = Math.sqrt(transform[2] * transform[2] + transform[3] * transform[3]);
-          const fontName = textItem.fontName || '';
-          
-          textItems.push({
-            text: textItem.str,
-            y: transform[5],
-            fontSize: fontSize,
-            isBold: fontName.toLowerCase().includes('bold'),
-            isItalic: fontName.toLowerCase().includes('italic'),
-          });
-        }
-      }
-      
-      // Sort by Y position
-      textItems.sort((a, b) => b.y - a.y);
-      
-      // Group into lines
-      const lines: ExtractedText[][] = [];
-      let currentLine: ExtractedText[] = [];
-      let lastY = textItems[0]?.y || 0;
-      
-      for (const item of textItems) {
-        if (Math.abs(item.y - lastY) > 5) {
-          if (currentLine.length > 0) {
-            lines.push([...currentLine]);
-          }
-          currentLine = [item];
-          lastY = item.y;
-        } else {
-          currentLine.push(item);
-        }
-      }
-      
-      if (currentLine.length > 0) {
-        lines.push(currentLine);
-      }
-      
-      // Convert lines to paragraphs
-      for (const line of lines) {
-        const lineText = line.map(item => item.text).join('').trim();
-        if (!lineText) continue;
+    for (const item of textContent.items) {
+      const textItem = item as any;
+      if (textItem.str && textItem.str.trim()) {
+        const transform = textItem.transform;
+        const fontSize = Math.sqrt(transform[2] * transform[2] + transform[3] * transform[3]);
+        const fontName = textItem.fontName || '';
         
-        // Check if line is a bullet point
-        const isBullet = /^[•●○◦▪▫⦿⦾oO-]\s/.test(lineText) || 
-                        (line[0] && line[0].text.trim() === 'o' && line.length > 1);
-        
-        let processedText = lineText;
-        if (isBullet) {
-          processedText = lineText.replace(/^[•●○◦▪▫⦿⦾oO-]\s*/, '').trim();
-        }
-        
-        const avgFontSize = line.reduce((sum, item) => sum + item.fontSize, 0) / line.length;
-        const isHeading = avgFontSize > 18;
-        const isBold = line.some(item => item.isBold);
-        const isItalic = line.some(item => item.isItalic);
-        
-        const textRuns: TextRun[] = [];
-        
-        if (isBullet) {
-          textRuns.push(new TextRun({
-            text: '• ',
-            size: Math.round(avgFontSize * 1.5),
-            bold: isBold,
-          }));
-        }
-        
-        textRuns.push(new TextRun({
-          text: processedText,
-          size: Math.round(avgFontSize * 1.5),
-          bold: isBold || isHeading,
-          italics: isItalic,
-          font: 'Calibri',
-        }));
-        
-        allParagraphs.push(new Paragraph({
-          children: textRuns,
-          spacing: {
-            after: isBullet ? 100 : 120,
-            before: isHeading ? 240 : 60,
-          },
-          indent: isBullet ? {
-            left: convertInchesToTwip(0.5),
-            hanging: convertInchesToTwip(0.25),
-          } : undefined,
-          alignment: AlignmentType.LEFT,
-        }));
-      }
-      
-      // Page break
-      if (pageNum < pdf.numPages) {
-        allParagraphs.push(new Paragraph({
-          children: [],
-          pageBreakBefore: true,
-        }));
+        textItems.push({
+          text: textItem.str,
+          y: transform[5],
+          fontSize: fontSize,
+          isBold: fontName.toLowerCase().includes('bold'),
+          isItalic: fontName.toLowerCase().includes('italic'),
+        });
       }
     }
     
-    const doc = new Document({
-      sections: [{
-        properties: {
-          page: {
-            margin: {
-              top: convertInchesToTwip(1),
-              right: convertInchesToTwip(1),
-              bottom: convertInchesToTwip(1),
-              left: convertInchesToTwip(1),
-            },
-          },
-        },
-        children: allParagraphs,
-      }],
-    });
+    textItems.sort((a, b) => b.y - a.y);
     
-    return await Packer.toBlob(doc);
+    const lines: any[][] = [];
+    let currentLine: any[] = [];
+    let lastY = textItems[0]?.y || 0;
     
-  } catch (error) {
-    console.error('PDF to Word advanced conversion failed, using fallback:', error);
+    for (const item of textItems) {
+      if (Math.abs(item.y - lastY) > 5) {
+        if (currentLine.length > 0) {
+          lines.push([...currentLine]);
+        }
+        currentLine = [item];
+        lastY = item.y;
+      } else {
+        currentLine.push(item);
+      }
+    }
     
-    // Fallback to simple text extraction
-    return await createSimpleWordDocument(file);
-  }
-}
-
-async function createSimpleWordDocument(file: File): Promise<Blob> {
-  try {
-    // Use the existing extractTextFromPDF function from pdfConverter
-    const { extractTextFromPDF } = await import('./pdfConverter');
-    const textContent = await extractTextFromPDF(file);
+    if (currentLine.length > 0) {
+      lines.push(currentLine);
+    }
     
-    const cleanText = textContent
-      .replace(/\bo\s+/g, '• ')  // Convert "o" to proper bullets
-      .replace(/\s+-\s+/g, '-')
-      .replace(/\s+/g, ' ')
-      .replace(/\s+\.\s+/g, '. ')
-      .replace(/\s+!\s+/g, '! ')
-      .trim();
-
-    const lines = cleanText.split('\n').filter(line => line.trim().length > 0);
-    const paragraphs = lines.map(line => {
-      const text = line.trim();
-      let isBold = false;
-      let fontSize = 22;
-      let indent = undefined;
+    for (const line of lines) {
+      const lineText = line.map((item: any) => item.text).join('').trim();
+      if (!lineText) continue;
       
-      // Detect bullet points
-      const isBullet = text.startsWith('•') || text.startsWith('-') || text.startsWith('*');
+      const isBullet = /^[•●○◦▪▫⦿⦾oO-]\s/.test(lineText) || 
+                      (line[0] && line[0].text.trim() === 'o' && line.length > 1);
       
-      // Make headers bold
-      if (text.match(/^[A-Z][A-Z\s]+$/) || 
-          text.match(/^[A-Z][a-z]+:$/) ||
-          text.match(/^\d+\.\s/) ||
-          text.includes('Small Group Discussion:')) {
-        isBold = true;
-        fontSize = 24;
+      let processedText = lineText;
+      if (isBullet) {
+        processedText = lineText.replace(/^[•●○◦▪▫⦿⦾oO-]\s*/, '').trim();
       }
       
-      // Set indentation for bullets
+      const avgFontSize = line.reduce((sum: number, item: any) => sum + item.fontSize, 0) / line.length;
+      const isHeading = avgFontSize > 18;
+      const isBold = line.some((item: any) => item.isBold);
+      const isItalic = line.some((item: any) => item.isItalic);
+      
+      const textRuns: TextRun[] = [];
+      
       if (isBullet) {
-        indent = {
+        textRuns.push(new TextRun({
+          text: '• ',
+          size: Math.round(avgFontSize * 1.5),
+          bold: isBold,
+        }));
+      }
+      
+      textRuns.push(new TextRun({
+        text: processedText,
+        size: Math.round(avgFontSize * 1.5),
+        bold: isBold || isHeading,
+        italics: isItalic,
+        font: 'Calibri',
+      }));
+      
+      allParagraphs.push(new Paragraph({
+        children: textRuns,
+        spacing: {
+          after: isBullet ? 100 : 120,
+          before: isHeading ? 240 : 60,
+        },
+        indent: isBullet ? {
           left: convertInchesToTwip(0.5),
           hanging: convertInchesToTwip(0.25),
-        };
-      }
-      
-      return new Paragraph({
-        children: [new TextRun({
-          text: text,
-          bold: isBold,
-          size: fontSize,
-          font: 'Calibri',
-        })],
-        spacing: { after: 200 },
-        indent: indent,
-      });
-    });
-
-    const doc = new Document({
-      sections: [{
-        properties: {
-          page: {
-            margin: {
-              top: convertInchesToTwip(1),
-              right: convertInchesToTwip(1),
-              bottom: convertInchesToTwip(1),
-              left: convertInchesToTwip(1),
-            },
+        } : undefined,
+        alignment: AlignmentType.LEFT,
+      }));
+    }
+    
+    if (pageNum < pdf.numPages) {
+      allParagraphs.push(new Paragraph({
+        children: [],
+        pageBreakBefore: true,
+      }));
+    }
+  }
+  
+  const doc = new Document({
+    sections: [{
+      properties: {
+        page: {
+          margin: {
+            top: convertInchesToTwip(1),
+            right: convertInchesToTwip(1),
+            bottom: convertInchesToTwip(1),
+            left: convertInchesToTwip(1),
           },
         },
-        children: paragraphs
-      }]
-    });
-
-    return await Packer.toBlob(doc);
-  } catch (fallbackError) {
-    console.error('Fallback conversion also failed:', fallbackError);
-    throw new Error('PDF to Word conversion failed. Please try a simpler PDF or use a different conversion method.');
-  }
+      },
+      children: allParagraphs,
+    }],
+  });
+  
+  return await Packer.toBlob(doc);
 }
-
