@@ -9,16 +9,16 @@ export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Pr
     const pdfjsLib = await import('pdfjs-dist');
     
     // Set up the worker - use a more reliable CDN
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
     
     const arrayBuffer = await file.arrayBuffer();
     
     // Add more options for better compatibility
     const loadingTask = pdfjsLib.getDocument({
       data: arrayBuffer,
-      cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+      cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
       cMapPacked: true,
-      standardFontDataUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/standard_fonts/',
+      standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`,
     });
     
     const pdf = await loadingTask.promise;
@@ -239,16 +239,16 @@ export async function extractTextFromPDF(file: File): Promise<string> {
     const pdfjsLib = await import('pdfjs-dist');
     
     // Set up the worker - use a more reliable CDN
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
     
     const arrayBuffer = await file.arrayBuffer();
     
     // Add more options for better compatibility
     const loadingTask = pdfjsLib.getDocument({
       data: arrayBuffer,
-      cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+      cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
       cMapPacked: true,
-      standardFontDataUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/standard_fonts/',
+      standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`,
     });
     
     const pdf = await loadingTask.promise;
