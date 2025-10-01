@@ -57,7 +57,7 @@ export async function imagesToPDF(files: File[]): Promise<Blob> {
   }
 
   const pdfBytes = await pdfDoc.save();
-  return new Blob([pdfBytes], { type: 'application/pdf' });
+  return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
 }
 
 export async function mergePDFs(files: File[]): Promise<Blob> {
@@ -71,7 +71,7 @@ export async function mergePDFs(files: File[]): Promise<Blob> {
   }
 
   const pdfBytes = await mergedPdf.save();
-  return new Blob([pdfBytes], { type: 'application/pdf' });
+  return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
 }
 
 export async function splitPDF(file: File): Promise<Blob[]> {
@@ -85,7 +85,7 @@ export async function splitPDF(file: File): Promise<Blob[]> {
     const [copiedPage] = await newPdf.copyPages(pdfDoc, [i]);
     newPdf.addPage(copiedPage);
     const pdfBytes = await newPdf.save();
-    pdfs.push(new Blob([pdfBytes], { type: 'application/pdf' }));
+    pdfs.push(new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' }));
   }
 
   return pdfs;
@@ -100,7 +100,7 @@ export async function compressPDF(file: File, compressionLevel: 'low' | 'medium'
     objectsPerTick: compressionLevel === 'high' ? 50 : compressionLevel === 'medium' ? 25 : 10,
   };
   const pdfBytes = await pdfDoc.save(saveOptions);
-  return new Blob([pdfBytes], { type: 'application/pdf' });
+  return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
 }
 
 export async function htmlToPDF(htmlContent: string): Promise<Blob> {
@@ -120,17 +120,17 @@ export async function textToPDF(text: string): Promise<Blob> {
   return new Blob([doc.output('blob')], { type: 'application/pdf' });
 }
 
-export async function rotatePDF(file: File, degrees: number): Promise<Blob> {
+export async function rotatePDF(file: File, rotationDegrees: number): Promise<Blob> {
   const arrayBuffer = await file.arrayBuffer();
   const pdfDoc = await PDFDocument.load(arrayBuffer);
   const pages = pdfDoc.getPages();
   
   pages.forEach(page => {
-    page.setRotation({ type: 'degrees', angle: degrees });
+    page.setRotation(degrees(rotationDegrees));
   });
 
   const pdfBytes = await pdfDoc.save();
-  return new Blob([pdfBytes], { type: 'application/pdf' });
+  return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
 }
 
 export async function deletePDFPages(file: File, pagesToDelete: string): Promise<Blob> {
@@ -157,7 +157,7 @@ export async function deletePDFPages(file: File, pagesToDelete: string): Promise
     }
   });
   const pdfBytes = await pdfDoc.save();
-  return new Blob([pdfBytes], { type: 'application/pdf' });
+  return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
 }
 
 export async function pdfToGrayscale(file: File): Promise<Blob> {
@@ -171,11 +171,11 @@ export async function pdfToGrayscale(file: File): Promise<Blob> {
       x: 50,
       y: height - 50,
       size: 10,
-      color: { r: 0.5, g: 0.5, b: 0.5 },
+      color: rgb(0.5, 0.5, 0.5),
     });
   }
   const pdfBytes = await pdfDoc.save();
-  return new Blob([pdfBytes], { type: 'application/pdf' });
+  return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
 }
 
 export async function cropPDF(file: File, margin: number = 20): Promise<Blob> {
@@ -188,11 +188,11 @@ export async function cropPDF(file: File, margin: number = 20): Promise<Blob> {
       x: 10,
       y: height - 20,
       size: 8,
-      color: { r: 0.3, g: 0.3, b: 0.3 },
+      color: rgb(0.3, 0.3, 0.3),
     });
   });
   const pdfBytes = await pdfDoc.save();
-  return new Blob([pdfBytes], { type: 'application/pdf' });
+  return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
 }
 
 export async function flattenPDF(file: File): Promise<Blob> {
@@ -206,11 +206,11 @@ export async function flattenPDF(file: File): Promise<Blob> {
       x: 50,
       y: height - 50,
       size: 10,
-      color: { r: 0.2, g: 0.4, b: 0.6 },
+      color: rgb(0.2, 0.4, 0.6),
     });
   }
   const pdfBytes = await pdfDoc.save();
-  return new Blob([pdfBytes], { type: 'application/pdf' });
+  return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
 }
 
 export async function extractTextFromPDF(file: File): Promise<string> {
@@ -255,7 +255,7 @@ export async function addWatermarkToPDF(file: File, watermarkText: string): Prom
   });
 
   const pdfBytes = await pdfDoc.save();
-  return new Blob([pdfBytes], { type: 'application/pdf' });
+  return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
 }
 
 

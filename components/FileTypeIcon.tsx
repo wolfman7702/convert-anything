@@ -13,13 +13,7 @@ import {
   FileSpreadsheet,
   Presentation,
   FileCode,
-  FileJson,
-  FileXml,
-  FileCsv,
-  FilePdf,
-  FileWord,
-  FileExcel,
-  FilePowerpoint
+  FileJson
 } from 'lucide-react';
 
 interface FileTypeIconProps {

@@ -1189,7 +1189,7 @@ Note: For best results, copy each slide content into PowerPoint manually.`;
           const simplePdfBuffer = await files[0].arrayBuffer();
           const simplePdfDoc = await PDFDocument.load(simplePdfBuffer);
           const simpleBytes = await simplePdfDoc.save();
-          outputBlob = new Blob([simpleBytes.buffer], { type: 'application/pdf' });
+          outputBlob = new Blob([simpleBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
           alert('Note: Advanced PDF manipulation is limited in browser. PDF structure preserved.');
           break;
         case 'webp-to-pdf':

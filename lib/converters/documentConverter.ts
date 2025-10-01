@@ -131,8 +131,8 @@ export async function htmlToDOCX(htmlContent: string): Promise<Blob> {
   const markdown = turndownService.turndown(htmlContent);
   
   // Create paragraphs from markdown
-  const lines = markdown.split('\n').filter(line => line.trim());
-  const paragraphs = lines.map(line => 
+  const lines = markdown.split('\n').filter((line: string) => line.trim());
+  const paragraphs = lines.map((line: string) => 
     new Paragraph({
       children: [new TextRun(line)]
     })
