@@ -8,8 +8,10 @@ export async function pdfToImages(file: File, format: 'png' | 'jpg' = 'jpg'): Pr
     // Dynamic import to avoid SSR issues
     const pdfjsLib = await import('pdfjs-dist');
     
-    // Set up the worker - use local worker file
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+        // Set up the worker - use CDN for Vercel compatibility
+        if (typeof window !== 'undefined') {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+        }
     
   const arrayBuffer = await file.arrayBuffer();
     
@@ -237,8 +239,10 @@ export async function extractTextFromPDF(file: File): Promise<string> {
     // Dynamic import to avoid SSR issues
     const pdfjsLib = await import('pdfjs-dist');
     
-    // Set up the worker - use local worker file
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+        // Set up the worker - use CDN for Vercel compatibility
+        if (typeof window !== 'undefined') {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+        }
     
     const arrayBuffer = await file.arrayBuffer();
     
@@ -391,15 +395,26 @@ export async function pdfToText(file: File): Promise<Blob> {
 // Enhanced PDF to Word conversion with perfect formatting preservation
 export async function pdfToWord(file: File): Promise<Blob> {
   try {
+    // Check if we're in browser environment
+    if (typeof window === 'undefined') {
+      throw new Error('PDF to Word conversion requires browser environment');
+    }
+
     // Dynamic import to avoid SSR issues
     const pdfjsLib = await import('pdfjs-dist');
     const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, convertInchesToTwip } = await import('docx');
 
-    // Set up PDF.js worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+    // Set up PDF.js worker - use CDN for Vercel compatibility
+    if (typeof window !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    }
 
     const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const loadingTask = pdfjsLib.getDocument({ 
+      data: arrayBuffer,
+      disableFontFace: true,
+      disableCreateObjectURL: true
+    });
     const pdf = await loadingTask.promise;
     
     const allParagraphs: any[] = [];
@@ -567,51 +582,79 @@ export async function pdfToWord(file: File): Promise<Blob> {
   } catch (error) {
     console.error('PDF to Word conversion error:', error);
     
-    // Fallback to simple text conversion
-    const textContent = await extractTextFromPDF(file);
-    const { Document, Packer, Paragraph, TextRun } = await import('docx');
-    
-    const cleanText = textContent
-      .replace(/\bo\s+/g, '')  // Remove standalone "o " characters
-      .replace(/\s+-\s+/g, '-')
-      .replace(/\s+/g, ' ')
-      .replace(/\s+\.\s+/g, '. ')
-      .replace(/\s+!\s+/g, '! ')
-      .trim();
+    // Enhanced fallback with better formatting
+    try {
+      const textContent = await extractTextFromPDF(file);
+      const { Document, Packer, Paragraph, TextRun, convertInchesToTwip } = await import('docx');
+      
+      const cleanText = textContent
+        .replace(/\bo\s+/g, '• ')  // Convert "o" to proper bullets
+        .replace(/\s+-\s+/g, '-')
+        .replace(/\s+/g, ' ')
+        .replace(/\s+\.\s+/g, '. ')
+        .replace(/\s+!\s+/g, '! ')
+        .trim();
 
-    const lines = cleanText.split('\n').filter(line => line.trim().length > 0);
-    const paragraphs = lines.map(line => {
-      const text = line.trim();
-      let isBold = false;
-      let fontSize = 22;
-      
-      // Make headers bold
-      if (text.match(/^[A-Z][A-Z\s]+$/) || 
-          text.match(/^[A-Z][a-z]+:$/) ||
-          text.match(/^\d+\.\s/) ||
-          text.includes('Small Group Discussion:')) {
-        isBold = true;
-        fontSize = 24;
-      }
-      
-      return new Paragraph({
-        children: [new TextRun({
-          text: text,
-          bold: isBold,
-          size: fontSize
-        })],
-        spacing: { after: 200 }
+      const lines = cleanText.split('\n').filter(line => line.trim().length > 0);
+      const paragraphs = lines.map(line => {
+        const text = line.trim();
+        let isBold = false;
+        let fontSize = 22;
+        let indent = undefined;
+        
+        // Detect bullet points
+        const isBullet = text.startsWith('•') || text.startsWith('-') || text.startsWith('*');
+        
+        // Make headers bold
+        if (text.match(/^[A-Z][A-Z\s]+$/) || 
+            text.match(/^[A-Z][a-z]+:$/) ||
+            text.match(/^\d+\.\s/) ||
+            text.includes('Small Group Discussion:')) {
+          isBold = true;
+          fontSize = 24;
+        }
+        
+        // Set indentation for bullets
+        if (isBullet) {
+          indent = {
+            left: convertInchesToTwip(0.5),
+            hanging: convertInchesToTwip(0.25),
+          };
+        }
+        
+        return new Paragraph({
+          children: [new TextRun({
+            text: text,
+            bold: isBold,
+            size: fontSize,
+            font: 'Calibri',
+          })],
+          spacing: { after: 200 },
+          indent: indent,
+        });
       });
-    });
 
-    const doc = new Document({
-      sections: [{
-        properties: {},
-        children: paragraphs
-      }]
-    });
+      const doc = new Document({
+        sections: [{
+          properties: {
+            page: {
+              margin: {
+                top: convertInchesToTwip(1),
+                right: convertInchesToTwip(1),
+                bottom: convertInchesToTwip(1),
+                left: convertInchesToTwip(1),
+              },
+            },
+          },
+          children: paragraphs
+        }]
+      });
 
-    return await Packer.toBlob(doc);
+      return await Packer.toBlob(doc);
+    } catch (fallbackError) {
+      console.error('Fallback conversion also failed:', fallbackError);
+      throw new Error('PDF to Word conversion failed. Please try a simpler PDF or use a different conversion method.');
+    }
   }
 }
 
@@ -619,12 +662,14 @@ async function extractImagesFromPage(page: any): Promise<any[]> {
   const images: any[] = [];
   
   try {
+    // Dynamic import to avoid SSR issues
+    const pdfjsLib = await import('pdfjs-dist');
     const ops = await page.getOperatorList();
     
     for (let i = 0; i < ops.fnArray.length; i++) {
       // Check for image painting operations
-      if (ops.fnArray[i] === (await import('pdfjs-dist')).OPS.paintImageXObject || 
-          ops.fnArray[i] === (await import('pdfjs-dist')).OPS.paintJpegXObject) {
+      if (ops.fnArray[i] === pdfjsLib.OPS.paintImageXObject || 
+          ops.fnArray[i] === pdfjsLib.OPS.paintJpegXObject) {
         
         try {
           const imageName = ops.argsArray[i][0];
