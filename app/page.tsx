@@ -15,7 +15,7 @@ export default function Home() {
           <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ConvertingHub</span> - Convert Anything
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          188+ free file conversion tools. Images, PDFs, documents, and more.
+          204+ free file conversion tools. Images, PDFs, documents, certificates, and more.
           Everything happens in your browser - completely private and secure.
         </p>
         <div className="pt-6">

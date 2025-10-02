@@ -22,6 +22,7 @@ import { generateQRCode, generateStyledQRCode, generateBarcode, svgToPNG, svgToJ
 import { countWords, convertCase, removeDuplicateLines, sortLines, reverseText, findReplace, formatJSON, minifyJSON } from '@/lib/converters/textConverter';
 import { rotateImage as rotateImageNew, flipImage as flipImageNew, grayscaleImage, invertImage, adjustBrightness, extractColorPalette, removeImageBackground, blurImage, adjustContrast, adjustSaturation, sepiaFilter, addBorder, pixelateImage } from '@/lib/converters/imageManipulation';
 import { hexToRgb, rgbToHex, hexToHsl, generateRandomColor } from '@/lib/converters/colorConverter';
+import { pemToDer, derToPem, pemToCrt, crtToPem, cerToPem, pemToCer, pfxToPem, pemToPfx, p7bToPem, pemToP7b, extractPublicKey, viewCertificateInfo } from '@/lib/converters/certificateConverter';
 
 interface ConversionPageProps {
   conversion: ConversionType;
@@ -342,6 +343,40 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         return 'urls.txt';
       case 'lorem-ipsum':
         return 'lorem-ipsum.txt';
+      
+      // Certificate conversions
+      case 'pem-to-der':
+        return `${baseName}.der`;
+      case 'der-to-pem':
+        return `${baseName}.pem`;
+      case 'pem-to-crt':
+        return `${baseName}.crt`;
+      case 'crt-to-pem':
+        return `${baseName}.pem`;
+      case 'cer-to-pem':
+        return `${baseName}.pem`;
+      case 'pem-to-cer':
+        return `${baseName}.cer`;
+      case 'pfx-to-pem':
+        return `${baseName}.pem`;
+      case 'p12-to-pem':
+        return `${baseName}.pem`;
+      case 'pem-to-pfx':
+        return `${baseName}.pfx`;
+      case 'pem-to-p12':
+        return `${baseName}.p12`;
+      case 'p7b-to-pem':
+        return `${baseName}.pem`;
+      case 'pem-to-p7b':
+        return `${baseName}.p7b`;
+      case 'der-to-crt':
+        return `${baseName}.crt`;
+      case 'crt-to-der':
+        return `${baseName}.der`;
+      case 'extract-public-key':
+        return `${baseName}.key`;
+      case 'view-certificate':
+        return `${baseName}-info.json`;
       
       // Default case - use conversion.to if available
       default:
@@ -1043,6 +1078,59 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           outputBlob = new Blob([loremText], { type: 'text/plain' });
           break;
 
+        // Certificate conversions
+        case 'pem-to-der':
+          outputBlob = await pemToDer(files[0]);
+          break;
+        case 'der-to-pem':
+          outputBlob = await derToPem(files[0]);
+          break;
+        case 'pem-to-crt':
+          outputBlob = await pemToCrt(files[0]);
+          break;
+        case 'crt-to-pem':
+          outputBlob = await crtToPem(files[0]);
+          break;
+        case 'cer-to-pem':
+          outputBlob = await cerToPem(files[0]);
+          break;
+        case 'pem-to-cer':
+          outputBlob = await pemToCer(files[0]);
+          break;
+        case 'pfx-to-pem':
+          outputBlob = await pfxToPem(files[0], (options as any).password || '');
+          break;
+        case 'p12-to-pem':
+          outputBlob = await pfxToPem(files[0], (options as any).password || '');
+          break;
+        case 'pem-to-pfx':
+          outputBlob = await pemToPfx(files[0], undefined, (options as any).password || '');
+          break;
+        case 'pem-to-p12':
+          outputBlob = await pemToPfx(files[0], undefined, (options as any).password || '');
+          break;
+        case 'p7b-to-pem':
+          outputBlob = await p7bToPem(files[0]);
+          break;
+        case 'pem-to-p7b':
+          outputBlob = await pemToP7b(files[0]);
+          break;
+        case 'der-to-crt':
+          const derPem = await derToPem(files[0]);
+          outputBlob = await pemToCrt(new File([derPem], 'cert.pem'));
+          break;
+        case 'crt-to-der':
+          const crtPem = await crtToPem(files[0]);
+          outputBlob = await pemToDer(new File([crtPem], 'cert.pem'));
+          break;
+        case 'extract-public-key':
+          outputBlob = await extractPublicKey(files[0]);
+          break;
+        case 'view-certificate':
+          const info = await viewCertificateInfo(files[0]);
+          outputBlob = new Blob([info], { type: 'application/json' });
+          break;
+
         default:
           console.log('Unhandled conversion ID:', conversion.id);
           throw new Error(`Conversion "${conversion.id}" not yet implemented`);
@@ -1150,6 +1238,14 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
                   conversion.from === 'svg' ? '.svg' :
                   conversion.from === 'binary' ? '.txt' :
                   conversion.from === 'hex' ? '.txt' :
+                  conversion.from === 'pem' ? '.pem,.crt,.cer,.key' :
+                  conversion.from === 'der' ? '.der,.cer' :
+                  conversion.from === 'pfx' ? '.pfx,.p12' :
+                  conversion.from === 'p12' ? '.p12,.pfx' :
+                  conversion.from === 'p7b' ? '.p7b,.p7c' :
+                  conversion.from === 'crt' ? '.crt,.cer,.pem' :
+                  conversion.from === 'cer' ? '.cer,.crt,.der' :
+                  conversion.from === 'key' ? '.key,.pem' :
                   undefined
                 }
                 multiple={['merge-pdf', 'create-zip', 'jpg-to-pdf', 'png-to-pdf', 'images-to-pdf-merge', 'images-to-pdf-single'].includes(conversion.id)}
@@ -1238,6 +1334,27 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       placeholder="Enter watermark text"
                     />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {(conversion.id === 'pfx-to-pem' || conversion.id === 'p12-to-pem' || conversion.id === 'pem-to-pfx' || conversion.id === 'pem-to-p12') && files.length > 0 && (
+              <div className="mt-6 p-4 bg-blue-50 rounded-xl">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Certificate Options</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Password (if encrypted)</label>
+                    <input
+                      type="password"
+                      value={(options as any).password || ''}
+                      onChange={(e) => setOptions({ ...options, password: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="Leave empty if no password"
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      Enter the password if your PFX/P12 file is encrypted. Leave empty if no password is required.
+                    </p>
                   </div>
                 </div>
               </div>

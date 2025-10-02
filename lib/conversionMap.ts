@@ -220,6 +220,24 @@ export const conversions: ConversionType[] = [
   { id: 'extract-emails', name: 'Extract Email Addresses', from: 'text', to: 'list', category: 'utility', description: 'Extract all email addresses from text' },
   { id: 'extract-urls', name: 'Extract URLs', from: 'text', to: 'list', category: 'utility', description: 'Extract all URLs from text' },
   { id: 'lorem-ipsum', name: 'Lorem Ipsum Generator', from: 'none', to: 'text', category: 'utility', description: 'Generate placeholder text' },
+
+  // CERTIFICATE CONVERSIONS (16)
+  { id: 'pem-to-der', name: 'PEM to DER', from: 'pem', to: 'der', category: 'certificate', description: 'Convert PEM certificate to DER format' },
+  { id: 'der-to-pem', name: 'DER to PEM', from: 'der', to: 'pem', category: 'certificate', description: 'Convert DER certificate to PEM format' },
+  { id: 'pem-to-crt', name: 'PEM to CRT', from: 'pem', to: 'crt', category: 'certificate', description: 'Convert PEM to CRT format' },
+  { id: 'crt-to-pem', name: 'CRT to PEM', from: 'crt', to: 'pem', category: 'certificate', description: 'Convert CRT to PEM format' },
+  { id: 'cer-to-pem', name: 'CER to PEM', from: 'cer', to: 'pem', category: 'certificate', description: 'Convert CER certificate to PEM format' },
+  { id: 'pem-to-cer', name: 'PEM to CER', from: 'pem', to: 'cer', category: 'certificate', description: 'Convert PEM certificate to CER format' },
+  { id: 'pfx-to-pem', name: 'PFX to PEM', from: 'pfx', to: 'pem', category: 'certificate', description: 'Convert PFX/P12 to PEM (extracts cert and key)', popular: true },
+  { id: 'p12-to-pem', name: 'P12 to PEM', from: 'p12', to: 'pem', category: 'certificate', description: 'Convert P12 to PEM format' },
+  { id: 'pem-to-pfx', name: 'PEM to PFX', from: 'pem', to: 'pfx', category: 'certificate', description: 'Convert PEM to PFX/P12 format' },
+  { id: 'pem-to-p12', name: 'PEM to P12', from: 'pem', to: 'p12', category: 'certificate', description: 'Convert PEM to P12 format' },
+  { id: 'p7b-to-pem', name: 'P7B to PEM', from: 'p7b', to: 'pem', category: 'certificate', description: 'Convert PKCS#7 to PEM format' },
+  { id: 'pem-to-p7b', name: 'PEM to P7B', from: 'pem', to: 'p7b', category: 'certificate', description: 'Convert PEM to PKCS#7 format' },
+  { id: 'der-to-crt', name: 'DER to CRT', from: 'der', to: 'crt', category: 'certificate', description: 'Convert DER to CRT format' },
+  { id: 'crt-to-der', name: 'CRT to DER', from: 'crt', to: 'der', category: 'certificate', description: 'Convert CRT to DER format' },
+  { id: 'extract-public-key', name: 'Extract Public Key', from: 'pem', to: 'key', category: 'certificate', description: 'Extract public key from certificate' },
+  { id: 'view-certificate', name: 'View Certificate Info', from: 'pem', to: 'json', category: 'certificate', description: 'View certificate details as JSON' },
 ];
 
 export const categories = [
@@ -227,6 +245,7 @@ export const categories = [
   { id: 'pdf', name: 'PDF Tools', icon: '📄', description: 'PDF conversion and manipulation' },
   { id: 'document', name: 'Document Tools', icon: '📝', description: 'Document conversions' },
   { id: 'data', name: 'Data Tools', icon: '📊', description: 'Data format conversions' },
+  { id: 'certificate', name: 'Certificate Tools', icon: '🔐', description: 'SSL/TLS certificate conversions' },
   { id: 'archive', name: 'Archive Tools', icon: '📦', description: 'Compression and archives' },
   { id: 'utility', name: 'Utilities', icon: '🔧', description: 'Other useful tools' },
 ];
