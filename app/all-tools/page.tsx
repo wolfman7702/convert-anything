@@ -8,7 +8,7 @@ export default function AllToolsPage() {
     <div className="max-w-7xl mx-auto space-y-12">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">All Conversion Tools</h1>
-        <p className="text-lg text-gray-600">Browse all 197+ conversion tools organized by category</p>
+        <p className="text-lg text-gray-600">Browse all 188+ conversion tools organized by category</p>
       </div>
 
       {categories.map((category) => {
@@ -20,6 +20,15 @@ export default function AllToolsPage() {
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{category.name}</h2>
                 <p className="text-gray-600">{category.description}</p>
+                {category.id === 'pdf' && (
+                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      <strong>Note:</strong> PDF to Word conversion requires server-side processing and is not available in this browser-based tool. 
+                      For best results, use <a href="https://smallpdf.com/pdf-to-word" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-900">Smallpdf</a> or 
+                      <a href="https://www.ilovepdf.com/pdf_to_word" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-900"> ILovePDF</a>.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
