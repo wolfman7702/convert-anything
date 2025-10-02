@@ -238,6 +238,9 @@ export const conversions: ConversionType[] = [
   { id: 'crt-to-der', name: 'CRT to DER', from: 'crt', to: 'der', category: 'certificate', description: 'Convert CRT to DER format' },
   { id: 'extract-public-key', name: 'Extract Public Key', from: 'pem', to: 'key', category: 'certificate', description: 'Extract public key from certificate' },
   { id: 'view-certificate', name: 'View Certificate Info', from: 'pem', to: 'json', category: 'certificate', description: 'View certificate details as JSON' },
+  { id: 'cer-to-crt', name: 'CER to CRT', from: 'cer', to: 'crt', category: 'certificate', description: 'Convert CER certificate to CRT format' },
+  { id: 'crt-to-cer', name: 'CRT to CER', from: 'crt', to: 'cer', category: 'certificate', description: 'Convert CRT certificate to CER format' },
+  { id: 'decode-csr', name: 'Decode CSR', from: 'csr', to: 'json', category: 'certificate', description: 'Decode Certificate Signing Request and view details', popular: true },
 ];
 
 export const categories = [

@@ -22,7 +22,7 @@ import { generateQRCode, generateStyledQRCode, generateBarcode, svgToPNG, svgToJ
 import { countWords, convertCase, removeDuplicateLines, sortLines, reverseText, findReplace, formatJSON, minifyJSON } from '@/lib/converters/textConverter';
 import { rotateImage as rotateImageNew, flipImage as flipImageNew, grayscaleImage, invertImage, adjustBrightness, extractColorPalette, removeImageBackground, blurImage, adjustContrast, adjustSaturation, sepiaFilter, addBorder, pixelateImage } from '@/lib/converters/imageManipulation';
 import { hexToRgb, rgbToHex, hexToHsl, generateRandomColor } from '@/lib/converters/colorConverter';
-import { pemToDer, derToPem, pemToCrt, crtToPem, cerToPem, pemToCer, pfxToPem, pemToPfx, p7bToPem, pemToP7b, extractPublicKey, viewCertificateInfo } from '@/lib/converters/certificateConverter';
+import { pemToDer, derToPem, pemToCrt, crtToPem, cerToPem, pemToCer, pfxToPem, pemToPfx, p7bToPem, pemToP7b, extractPublicKey, viewCertificateInfo, cerToCrt, crtToCer, decodeCSR } from '@/lib/converters/certificateConverter';
 
 interface ConversionPageProps {
   conversion: ConversionType;
@@ -377,6 +377,12 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
         return `${baseName}.key`;
       case 'view-certificate':
         return `${baseName}-info.json`;
+      case 'cer-to-crt':
+        return `${baseName}.crt`;
+      case 'crt-to-cer':
+        return `${baseName}.cer`;
+      case 'decode-csr':
+        return `${baseName}-csr-info.json`;
       
       // Default case - use conversion.to if available
       default:
@@ -1130,6 +1136,16 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
           const info = await viewCertificateInfo(files[0]);
           outputBlob = new Blob([info], { type: 'application/json' });
           break;
+        case 'cer-to-crt':
+          outputBlob = await cerToCrt(files[0]);
+          break;
+        case 'crt-to-cer':
+          outputBlob = await crtToCer(files[0]);
+          break;
+        case 'decode-csr':
+          const csrInfo = await decodeCSR(files[0]);
+          outputBlob = new Blob([csrInfo], { type: 'application/json' });
+          break;
 
         default:
           console.log('Unhandled conversion ID:', conversion.id);
@@ -1246,6 +1262,7 @@ export default function ConversionPage({ conversion }: ConversionPageProps) {
                   conversion.from === 'crt' ? '.crt,.cer,.pem' :
                   conversion.from === 'cer' ? '.cer,.crt,.der' :
                   conversion.from === 'key' ? '.key,.pem' :
+                  conversion.from === 'csr' ? '.csr,.pem' :
                   undefined
                 }
                 multiple={['merge-pdf', 'create-zip', 'jpg-to-pdf', 'png-to-pdf', 'images-to-pdf-merge', 'images-to-pdf-single'].includes(conversion.id)}

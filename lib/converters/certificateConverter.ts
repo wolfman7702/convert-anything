@@ -236,6 +236,120 @@ export async function viewCertificateInfo(file: File): Promise<string> {
   throw new Error('Invalid certificate file');
 }
 
+// CER to CRT
+export async function cerToCrt(file: File): Promise<Blob> {
+  const arrayBuffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  
+  // Check if it's text (PEM) or binary (DER)
+  const isPEM = bytes[0] === 0x2D; // '-' character (-----BEGIN)
+  
+  if (isPEM) {
+    // Already PEM format, just return as CRT
+    const text = await file.text();
+    return new Blob([text], { type: 'application/x-x509-ca-cert' });
+  }
+  
+  // Convert DER to PEM
+  const der = arrayBufferToString(arrayBuffer);
+  const asn1 = forge.asn1.fromDer(der);
+  const cert = forge.pki.certificateFromAsn1(asn1);
+  const pem = forge.pki.certificateToPem(cert);
+  return new Blob([pem], { type: 'application/x-x509-ca-cert' });
+}
+
+// CRT to CER  
+export async function crtToCer(file: File): Promise<Blob> {
+  const text = await file.text();
+  
+  if (text.includes('BEGIN CERTIFICATE')) {
+    const cert = forge.pki.certificateFromPem(text);
+    const der = forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes();
+    return new Blob([stringToArrayBuffer(der)], { type: 'application/pkix-cert' });
+  }
+  
+  throw new Error('Invalid CRT certificate');
+}
+
+// CSR Decoder - Decode and display CSR information
+export async function decodeCSR(file: File): Promise<string> {
+  const text = await file.text();
+  
+  if (!text.includes('CERTIFICATE REQUEST')) {
+    throw new Error('Invalid CSR file');
+  }
+  
+  const csr = forge.pki.certificationRequestFromPem(text);
+  
+  // Extract subject
+  const subject: any = {};
+  csr.subject.attributes.forEach((attr: any) => {
+    const shortName = attr.shortName || attr.name;
+    subject[shortName] = attr.value;
+  });
+  
+  // Extract public key info
+  const publicKey = csr.publicKey as any;
+  const keySize = publicKey.n ? publicKey.n.bitLength() : 'Unknown';
+  
+  // Get signature algorithm
+  const sigOid = csr.signatureOid;
+  const sigAlgo = forge.pki.oids[sigOid] || sigOid;
+  
+  // Extract SANs (Subject Alternative Names)
+  const sans: string[] = [];
+  const extensions: any[] = [];
+  
+  if (csr.attributes) {
+    csr.attributes.forEach((attr: any) => {
+      if (attr.name === 'extensionRequest' && attr.extensions) {
+        attr.extensions.forEach((ext: any) => {
+          if (ext.name === 'subjectAltName' && ext.altNames) {
+            ext.altNames.forEach((altName: any) => {
+              if (altName.type === 2) sans.push(`DNS: ${altName.value}`);
+              else if (altName.type === 7) sans.push(`IP: ${altName.ip}`);
+              else if (altName.type === 1) sans.push(`Email: ${altName.value}`);
+              else if (altName.type === 6) sans.push(`URI: ${altName.value}`);
+            });
+          }
+          
+          extensions.push({
+            name: ext.name || ext.id,
+            critical: ext.critical || false,
+          });
+        });
+      }
+    });
+  }
+  
+  // Build readable output
+  const info = {
+    'Certificate Signing Request (CSR)': {
+      'Common Name (CN)': subject.CN || 'Not specified',
+      'Organization (O)': subject.O || 'Not specified',
+      'Organizational Unit (OU)': subject.OU || 'Not specified',
+      'Locality/City (L)': subject.L || 'Not specified',
+      'State/Province (ST)': subject.ST || 'Not specified',
+      'Country (C)': subject.C || 'Not specified',
+      'Email Address': subject.emailAddress || 'Not specified',
+    },
+    'Subject Alternative Names (SANs)': sans.length > 0 ? sans : ['None'],
+    'Public Key Information': {
+      'Algorithm': 'RSA',
+      'Key Size': `${keySize} bits`,
+      'Modulus': publicKey.n ? publicKey.n.toString(16).substring(0, 60) + '...' : 'N/A',
+      'Exponent': publicKey.e ? publicKey.e.toString() : 'N/A',
+    },
+    'Signature Algorithm': sigAlgo,
+    'Extensions': extensions.length > 0 ? extensions : ['None'],
+    'Raw Subject': csr.subject.attributes.map((attr: any) => 
+      `${attr.shortName || attr.name}=${attr.value}`
+    ).join(', '),
+  };
+  
+  return JSON.stringify(info, null, 2);
+}
+
 // Helper functions
 function stringToArrayBuffer(str: string): ArrayBuffer {
   const buf = new ArrayBuffer(str.length);
